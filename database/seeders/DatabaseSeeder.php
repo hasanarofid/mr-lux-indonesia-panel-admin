@@ -15,12 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Roles
+        $this->call(RoleSeeder::class);
+
         // Admin User
-        User::factory()->create([
-            'name' => 'Admin Lux',
-            'email' => 'admin@lux.id',
-            'password' => bcrypt('password'),
-        ]);
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@lux.id'],
+            [
+                'name' => 'Admin Lux',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        $admin->assignRole('super_admin');
 
         // Products
         $products = [
@@ -32,7 +39,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
-            \App\Models\Product::create($product);
+            \App\Models\Product::updateOrCreate(['sku' => $product['sku']], $product);
         }
 
         // Customers
@@ -43,7 +50,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($customers as $customer) {
-            \App\Models\Customer::create($customer);
+            \App\Models\Customer::updateOrCreate(['name' => $customer['name']], $customer);
         }
     }
 }

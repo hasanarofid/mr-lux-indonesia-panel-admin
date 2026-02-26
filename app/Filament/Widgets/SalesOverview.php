@@ -22,6 +22,14 @@ class SalesOverview extends BaseWidget
                 ->description('Total tax collected')
                 ->descriptionIcon('heroicon-m-receipt-percent')
                 ->color('warning'),
+            \Filament\Widgets\StatsOverviewWidget\Stat::make('Total Products', \App\Models\Product::count())
+                ->description('Total items in inventory')
+                ->descriptionIcon('heroicon-m-squares-2x2')
+                ->color('primary'),
+            \Filament\Widgets\StatsOverviewWidget\Stat::make('Total Customers', \App\Models\Customer::count())
+                ->description('Total registered customers')
+                ->descriptionIcon('heroicon-m-users')
+                ->color('indigo'),
         ];
     }
 }

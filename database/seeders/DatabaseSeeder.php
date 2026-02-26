@@ -29,6 +29,26 @@ class DatabaseSeeder extends Seeder
 
         $admin->assignRole('super_admin');
 
+        // Gudang User
+        $gudang = User::updateOrCreate(
+            ['email' => 'gudang@lux.id'],
+            [
+                'name' => 'Staff Gudang',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $gudang->assignRole('gudang');
+
+        // Kasir User
+        $kasir = User::updateOrCreate(
+            ['email' => 'kasir@lux.id'],
+            [
+                'name' => 'Staff Kasir',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $kasir->assignRole('kasir');
+
         // Products
         $products = [
             ['name' => 'Clear Coat Barrel', 'sku' => 'CC-BRL', 'uom' => 'PCS', 'price' => 5000000, 'stock' => 10],

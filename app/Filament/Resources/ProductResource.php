@@ -29,6 +29,16 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\Select::make('category')
+                            ->options([
+                                'EPOXY' => 'EPOXY',
+                                'POLYURETHANE (PU)' => 'POLYURETHANE (PU)',
+                                'NON SAG' => 'NON SAG',
+                                'ALIFATIK' => 'ALIFATIK',
+                                'ALTECO' => 'ALTECO',
+                            ])
+                            ->searchable()
+                            ->required(),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU/Code')
                             ->unique(ignoreRecord: true)
@@ -43,16 +53,28 @@ class ProductResource extends Resource
                             ])
                             ->required()
                             ->default('PCS'),
+                        Forms\Components\TextInput::make('isi')
+                            ->label('Units per Carton (Isi)')
+                            ->numeric()
+                            ->default(1)
+                            ->required(),
                         Forms\Components\TextInput::make('price')
+                            ->label('Price per Unit')
                             ->required()
                             ->numeric()
                             ->default(0)
                             ->prefix('Rp'),
+                        Forms\Components\TextInput::make('price_per_carton')
+                            ->label('Price per Carton')
+                            ->numeric()
+                            ->default(0)
+                            ->prefix('Rp'),
                         Forms\Components\TextInput::make('stock')
+                            ->label('Total Stock (Units)')
                             ->required()
                             ->numeric()
                             ->default(0)
-                            ->disabled() // Should be managed by stock entries
+                            ->disabled()
                             ->dehydrated(false),
                         Forms\Components\Textarea::make('description')
                             ->columnSpanFull(),
@@ -66,11 +88,18 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('category')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('uom')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('isi')
+                    ->label('Isi/Dus')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->money('idr')
                     ->sortable(),

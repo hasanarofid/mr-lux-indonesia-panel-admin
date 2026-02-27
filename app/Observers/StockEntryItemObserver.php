@@ -12,7 +12,13 @@ class StockEntryItemObserver
     public function created(StockEntryItem $stockEntryItem): void
     {
         $product = $stockEntryItem->product;
-        $product->increment('stock', $stockEntryItem->quantity);
+        $type = $stockEntryItem->stockEntry->type;
+
+        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+            $product->increment('stock', $stockEntryItem->quantity);
+        } elseif ($type === 'KELUAR') {
+            $product->decrement('stock', $stockEntryItem->quantity);
+        }
     }
 
     /**
@@ -20,9 +26,15 @@ class StockEntryItemObserver
      */
     public function updated(StockEntryItem $stockEntryItem): void
     {
-        $difference = $stockEntryItem->quantity - $stockEntryItem->getOriginal('quantity');
         $product = $stockEntryItem->product;
-        $product->increment('stock', $difference);
+        $type = $stockEntryItem->stockEntry->type;
+        $difference = $stockEntryItem->quantity - $stockEntryItem->getOriginal('quantity');
+
+        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+            $product->increment('stock', $difference);
+        } elseif ($type === 'KELUAR') {
+            $product->decrement('stock', $difference);
+        }
     }
 
     /**
@@ -31,7 +43,13 @@ class StockEntryItemObserver
     public function deleted(StockEntryItem $stockEntryItem): void
     {
         $product = $stockEntryItem->product;
-        $product->decrement('stock', $stockEntryItem->quantity);
+        $type = $stockEntryItem->stockEntry->type;
+
+        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+            $product->decrement('stock', $stockEntryItem->quantity);
+        } elseif ($type === 'KELUAR') {
+            $product->increment('stock', $stockEntryItem->quantity);
+        }
     }
 
     /**

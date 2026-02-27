@@ -9,6 +9,8 @@ class StockEntryItem extends Model
     protected $fillable = [
         'stock_entry_id',
         'product_id',
+        'quantity_carton',
+        'quantity_unit',
         'quantity',
     ];
 

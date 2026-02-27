@@ -13,6 +13,7 @@ class Sale extends Model
         'customer_id',
         'invoice_number',
         'date',
+        'due_date',
         'subtotal',
         'discount_item_total',
         'discount_invoice',

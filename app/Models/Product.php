@@ -12,9 +12,12 @@ class Product extends Model
     use SoftDeletes, LogsActivity;
     protected $fillable = [
         'name',
+        'category',
         'sku',
         'uom',
+        'isi',
         'price',
+        'price_per_carton',
         'stock',
         'description',
     ];

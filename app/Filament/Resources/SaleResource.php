@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -45,6 +46,8 @@ class SaleResource extends Resource
                         Forms\Components\DatePicker::make('date')
                             ->default(now())
                             ->required(),
+                        Forms\Components\DatePicker::make('due_date')
+                            ->label('Jatuh Tempo'),
                         Forms\Components\Toggle::make('is_ppn')
                             ->label('Include PPN (11%)')
                             ->live()
@@ -75,53 +78,62 @@ class SaleResource extends Resource
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('price')
-                                    ->numeric()
                                     ->required()
                                     ->prefix('Rp')
+                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->stripCharacters('.')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('discount_item')
                                     ->label('Disc/Item')
-                                    ->numeric()
                                     ->default(0)
                                     ->prefix('Rp')
+                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->stripCharacters('.')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('subtotal')
-                                    ->numeric()
                                     ->required()
                                     ->readOnly()
-                                    ->prefix('Rp'),
+                                    ->prefix('Rp')
+                                    ->mask(RawJs::make('$money($input, ",", ".", 0)')),
                             ])
                             ->columns(5)
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
+                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set))
+                            ->extraAttributes([
+                                'onkeydown' => "if (event.key === 'Enter') { event.preventDefault(); return false; }",
+                            ]),
                     ]),
 
                 Forms\Components\Section::make('Summary')
                     ->schema([
                         Forms\Components\TextInput::make('subtotal')
-                            ->numeric()
                             ->readOnly()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->afterStateHydrated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\TextInput::make('discount_invoice')
                             ->label('Discount Invoice')
-                            ->numeric()
                             ->default(0)
                             ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->stripCharacters('.')
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\TextInput::make('ppn_amount')
                             ->label('PPN (11%)')
-                            ->numeric()
                             ->readOnly()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)')),
                         Forms\Components\TextInput::make('grand_total')
-                            ->numeric()
                             ->readOnly()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)')),
                         Forms\Components\Textarea::make('note')
                             ->columnSpanFull(),
+                        Forms\Components\Hidden::make('discount_item_total')
+                            ->default(0),
                     ])->columns(2),
             ]);
     }
@@ -129,56 +141,87 @@ class SaleResource extends Resource
     public static function updateItemSubtotal(Forms\Get $get, Forms\Set $set): void
     {
         $quantity = floatval($get('quantity') ?? 0);
-        $price = floatval($get('price') ?? 0);
-        $discount = floatval($get('discount_item') ?? 0);
+        $price = floatval(str_replace('.', '', $get('price') ?? 0));
+        $discount = floatval(str_replace('.', '', $get('discount_item') ?? 0));
 
         $subtotal = $quantity * ($price - $discount);
         $set('subtotal', $subtotal);
+        
+        // Explicitly trigger summary calculation at parent level
+        self::calculateTotals($get, $set);
     }
 
     public static function calculateTotals(Forms\Get $get, Forms\Set $set): void
     {
-        $items = collect($get('items') ?? []);
-        $subtotal = $items->sum('subtotal');
-        $discountInvoice = floatval($get('discount_invoice') ?? 0);
+        // Get items. One of these will work depending on the current scope.
+        $items = collect($get('items') ?? $get('../../items') ?? []);
+        
+        $subtotal = $items->sum(function ($item) {
+            return floatval(str_replace('.', '', $item['subtotal'] ?? 0));
+        });
+
+        $discountItemTotal = $items->sum(function ($item) {
+            $price = floatval(str_replace('.', '', $item['price'] ?? 0));
+            $quantity = floatval($item['quantity'] ?? 0);
+            $discount = floatval(str_replace('.', '', $item['discount_item'] ?? 0));
+            return $discount * $quantity;
+        });
+        
+        $discountInvoice = floatval(str_replace('.', '', $get('discount_invoice') ?? $get('../../discount_invoice') ?? 0));
+        $isPpn = $get('is_ppn') ?? $get('../../is_ppn') ?? false;
         
         $baseTotal = $subtotal - $discountInvoice;
-        $ppnAmount = $get('is_ppn') ? ($baseTotal * 0.11) : 0;
+        $ppnAmount = $isPpn ? ($baseTotal * 0.11) : 0;
         $grandTotal = $baseTotal + $ppnAmount;
 
-        $set('subtotal', $subtotal);
-        $set('ppn_amount', $ppnAmount);
-        $set('grand_total', $grandTotal);
+        // Try setting both local and parent for summary fields. 
+        $isInRow = !empty($get('product_id'));
+
+        if ($isInRow) {
+            $set('../../subtotal', $subtotal);
+            $set('../../discount_item_total', $discountItemTotal);
+            $set('../../ppn_amount', $ppnAmount);
+            $set('../../grand_total', $grandTotal);
+        } else {
+            $set('subtotal', $subtotal);
+            $set('discount_item_total', $discountItemTotal);
+            $set('ppn_amount', $ppnAmount);
+            $set('grand_total', $grandTotal);
+        }
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('customer_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Customer')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('invoice_number')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('due_date')
+                    ->date()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('subtotal')
-                    ->numeric()
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('discount_item_total')
-                    ->numeric()
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('discount_invoice')
-                    ->numeric()
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_ppn')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('ppn_amount')
-                    ->numeric()
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')
-                    ->numeric()
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

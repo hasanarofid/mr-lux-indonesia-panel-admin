@@ -28,12 +28,13 @@ class StockEntryResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('type')
                             ->options([
+                                'MASUK' => 'Masuk (Stock In)',
+                                'KELUAR' => 'Keluar (Stock Out)',
                                 'PRODUCTION' => 'Production',
                                 'ADJUSTMENT' => 'Adjustment',
-                                'TRANSFER' => 'Transfer',
                             ])
                             ->required()
-                            ->default('PRODUCTION'),
+                            ->default('MASUK'),
                         Forms\Components\DatePicker::make('date')
                             ->required()
                             ->default(now()),
@@ -50,15 +51,39 @@ class StockEntryResource extends Resource
                                     ->relationship('product', 'name')
                                     ->required()
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                        $product = \App\Models\Product::find($state);
+                                        if ($product) {
+                                            $set('isi', $product->isi ?? 1);
+                                        }
+                                    }),
+                                Forms\Components\TextInput::make('isi')
+                                    ->label('Isi/Dus')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->dehydrated(false),
+                                Forms\Components\TextInput::make('quantity_carton')
+                                    ->label('Jumlah Dus')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
+                                Forms\Components\TextInput::make('quantity_unit')
+                                    ->label('Eceran (Pcs)')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity')
+                                    ->label('Total Pcs')
                                     ->numeric()
                                     ->required()
-                                    ->minValue(0.01)
-                                    ->default(1),
+                                    ->readOnly(),
                             ])
-                            ->columns(2)
-                            ->itemLabel(fn (array $state): ?string => (\App\Models\Product::find($state['product_id'])?->name ?? 'Item') . ' (' . ($state['quantity'] ?? 0) . ')'),
+                            ->columns(5)
+                            ->itemLabel(fn (array $state): ?string => (\App\Models\Product::find($state['product_id'])?->name ?? 'Item') . ' (' . ($state['quantity'] ?? 0) . ' pcs)'),
                     ]),
             ]);
     }
@@ -99,6 +124,22 @@ class StockEntryResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function updateTotalQuantity(Forms\Get $get, Forms\Set $set): void
+    {
+        $productId = $get('product_id');
+        if (!$productId) return;
+
+        $product = \App\Models\Product::find($productId);
+        $isi = $product ? ($product->isi ?? 1) : 1;
+        
+        $cartons = floatval($get('quantity_carton') ?? 0);
+        $units = floatval($get('quantity_unit') ?? 0);
+        
+        $totalQuantity = ($cartons * $isi) + $units;
+        
+        $set('quantity', $totalQuantity);
     }
 
     public static function getPages(): array

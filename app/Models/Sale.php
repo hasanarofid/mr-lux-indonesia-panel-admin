@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Sale extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'customer_id',
         'invoice_number',
@@ -32,5 +35,13 @@ class Sale extends Model
     public function deliveryNotes()
     {
         return $this->hasMany(DeliveryNote::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
 
         // Admin User
         $admin = User::updateOrCreate(
-            ['email' => 'admin@lux.id'],
+            ['email' => 'admin@mrluxindonesia.com'],
             [
                 'name' => 'Admin Lux',
                 'password' => bcrypt('password'),
@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
 
         // Gudang User
         $gudang = User::updateOrCreate(
-            ['email' => 'gudang@lux.id'],
+            ['email' => 'gudang@mrluxindonesia.com'],
             [
                 'name' => 'Staff Gudang',
                 'password' => bcrypt('password'),
@@ -41,7 +41,7 @@ class DatabaseSeeder extends Seeder
 
         // Kasir User
         $kasir = User::updateOrCreate(
-            ['email' => 'kasir@lux.id'],
+            ['email' => 'kasir@mrluxindonesia.com'],
             [
                 'name' => 'Staff Kasir',
                 'password' => bcrypt('password'),

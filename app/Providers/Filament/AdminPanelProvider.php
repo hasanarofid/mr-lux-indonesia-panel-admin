@@ -32,6 +32,8 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/LOGO-MR-LUX-INDONESIA.webp'))
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/favicon.png'))
+            ->darkMode(true)
+            ->defaultThemeMode(\Filament\Enums\ThemeMode::Light)
             ->colors([
                 'primary' => Color::Amber,
                 'gray' => Color::Zinc,

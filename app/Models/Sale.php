@@ -20,6 +20,8 @@ class Sale extends Model
         'is_ppn',
         'ppn_amount',
         'grand_total',
+        'shipping_cost',
+        'status',
         'note',
     ];
 

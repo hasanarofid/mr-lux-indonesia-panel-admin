@@ -39,11 +39,12 @@ class SaleResource extends Resource
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $customer = \App\Models\Customer::find($state);
                                 if ($customer) {
                                     $set('is_ppn', $customer->group === 'PPN');
                                 }
+                                self::calculateTotals($get, $set);
                             }),
                         Forms\Components\TextInput::make('invoice_number')
                             ->label('Nomor Invoice')
@@ -56,6 +57,15 @@ class SaleResource extends Resource
                             ->required(),
                         Forms\Components\DatePicker::make('due_date')
                             ->label('Jatuh Tempo'),
+                        Forms\Components\Select::make('status')
+                            ->label('Status')
+                            ->options([
+                                'Belum Lunas' => 'Belum Lunas',
+                                'Lunas' => 'Lunas',
+                                'Dibatalkan' => 'Dibatalkan',
+                            ])
+                            ->default('Belum Lunas')
+                            ->required(),
                         Forms\Components\Toggle::make('is_ppn')
                             ->label('Include PPN (11%)')
                             ->live()
@@ -70,15 +80,17 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->sku} - {$record->name}")
+                                    ->searchable(['name', 'sku'])
                                     ->required()
-                                    ->searchable()
                                     ->preload()
                                     ->live()
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($state);
                                         if ($product) {
                                             $set('price', $product->price);
                                         }
+                                        self::updateItemSubtotal($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
@@ -95,21 +107,39 @@ class SaleResource extends Resource
                                     ->stripCharacters('.')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
+                                Forms\Components\TextInput::make('discount_percent')
+                                    ->label('Diskon %')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                        $price = floatval(str_replace('.', '', $get('price') ?? 0));
+                                        $discountNominal = $price * (floatval($state) / 100);
+                                        $set('discount_item', $discountNominal);
+                                        self::updateItemSubtotal($get, $set);
+                                    }),
                                 Forms\Components\TextInput::make('discount_item')
-                                    ->label('Diskon/Unit')
+                                    ->label('Diskon Rp')
                                     ->default(0)
                                     ->prefix('Rp')
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)'))
                                     ->stripCharacters('.')
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
+                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                        $price = floatval(str_replace('.', '', $get('price') ?? 0));
+                                        $nominal = floatval(str_replace('.', '', $state ?? 0));
+                                        if ($price > 0) {
+                                            $set('discount_percent', round(($nominal / $price) * 100, 2));
+                                        }
+                                        self::updateItemSubtotal($get, $set);
+                                    }),
                                 Forms\Components\TextInput::make('subtotal')
                                     ->required()
                                     ->readOnly()
                                     ->prefix('Rp')
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)')),
                             ])
-                            ->columns(5)
+                            ->columns(6)
                             ->live()
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set))
                             ->extraAttributes([
@@ -137,6 +167,14 @@ class SaleResource extends Resource
                             ->readOnly()
                             ->prefix('Rp')
                             ->mask(RawJs::make('$money($input, ",", ".", 0)')),
+                        Forms\Components\TextInput::make('shipping_cost')
+                            ->label('Ongkir')
+                            ->default(0)
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->stripCharacters('.')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\TextInput::make('grand_total')
                             ->readOnly()
                             ->prefix('Rp')
@@ -180,11 +218,12 @@ class SaleResource extends Resource
         });
         
         $discountInvoice = floatval(str_replace('.', '', $get('discount_invoice') ?? $get('../../discount_invoice') ?? 0));
+        $shippingCost = floatval(str_replace('.', '', $get('shipping_cost') ?? $get('../../shipping_cost') ?? 0));
         $isPpn = $get('is_ppn') ?? $get('../../is_ppn') ?? false;
         
         $baseTotal = $subtotal - $discountInvoice;
         $ppnAmount = $isPpn ? ($baseTotal * 0.11) : 0;
-        $grandTotal = $baseTotal + $ppnAmount;
+        $grandTotal = $baseTotal + $ppnAmount + $shippingCost;
 
         // Try setting both local and parent for summary fields. 
         $isInRow = !empty($get('product_id'));
@@ -206,45 +245,47 @@ class SaleResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('Nomor #')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('date')
+                    ->label('Tanggal')
+                    ->date('d/m/Y')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Pelanggan')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('invoice_number')
-                    ->label('Nomor Invoice')
+                Tables\Columns\TextColumn::make('note')
+                    ->label('Keterangan')
+                    ->searchable()
+                    ->limit(30),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Lunas' => 'success',
+                        'Belum Lunas' => 'warning',
+                        'Dibatalkan' => 'danger',
+                        default => 'gray',
+                    })
                     ->searchable(),
-                Tables\Columns\TextColumn::make('date')
-                    ->label('Tanggal')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('due_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('subtotal')
-                    ->money('IDR', locale: 'id')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('discount_item_total')
-                    ->money('IDR', locale: 'id')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('discount_invoice')
-                    ->money('IDR', locale: 'id')
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('is_ppn')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('ppn_amount')
-                    ->money('IDR', locale: 'id')
+                Tables\Columns\TextColumn::make('age')
+                    ->label('Umur (hr)')
+                    ->state(function (Sale $record): int {
+                        if (!$record->date) return 0;
+                        return now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($record->date)->startOfDay(), false) * -1;
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Total')
                     ->money('IDR', locale: 'id')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('customer.category')
+                    ->label('Kategori Pelanggan')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 //

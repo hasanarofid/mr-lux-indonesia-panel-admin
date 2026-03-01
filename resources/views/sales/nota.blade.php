@@ -106,6 +106,9 @@
         @if($sale->is_ppn)
         <div><span>PPN (11%):</span> <span>{{ number_format($sale->ppn_amount) }}</span></div>
         @endif
+        @if($sale->shipping_cost > 0)
+        <div><span>Ongkir:</span> <span>{{ number_format($sale->shipping_cost) }}</span></div>
+        @endif
         <div style="font-weight: bold; border-top: 1px solid #000; margin-top: 5px; padding-top: 5px;">
             <span>TOTAL:</span> <span>{{ number_format($sale->grand_total) }}</span>
         </div>

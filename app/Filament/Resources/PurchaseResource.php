@@ -18,7 +18,11 @@ class PurchaseResource extends Resource
     protected static ?string $model = Purchase::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-    protected static ?string $navigationGroup = 'Purchases';
+    protected static ?string $navigationLabel = 'Pembelian';
+    protected static ?string $navigationGroup = 'Pembelian';
+    protected static ?string $slug = 'pembelian';
+    protected static ?string $modelLabel = 'Pembelian';
+    protected static ?string $pluralModelLabel = 'Pembelian';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -29,22 +33,25 @@ class PurchaseResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Purchase Information')
+                Forms\Components\Section::make('Informasi Pembelian')
                     ->schema([
                         Forms\Components\TextInput::make('supplier_name')
+                            ->label('Nama Supplier')
                             ->required()
                             ->maxLength(255),
                         Forms\Components\DatePicker::make('date')
+                            ->label('Tanggal')
                             ->default(now())
                             ->required(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Items')
+                Forms\Components\Section::make('Item')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
                                 Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
                                     ->relationship('product', 'name')
                                     ->required()
                                     ->searchable()
@@ -57,13 +64,14 @@ class PurchaseResource extends Resource
                                         }
                                     }),
                                 Forms\Components\TextInput::make('quantity')
+                                    ->label('Jumlah')
                                     ->numeric()
                                     ->required()
                                     ->default(1)
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('cost')
-                                    ->label('Cost/Item')
+                                    ->label('Biaya/Unit')
                                     ->numeric()
                                     ->required()
                                     ->prefix('Rp')
@@ -80,13 +88,14 @@ class PurchaseResource extends Resource
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                     ]),
 
-                Forms\Components\Section::make('Summary')
+                Forms\Components\Section::make('Ringkasan')
                     ->schema([
                         Forms\Components\TextInput::make('total')
                             ->numeric()
                             ->readOnly()
                             ->prefix('Rp'),
                         Forms\Components\Textarea::make('note')
+                            ->label('Catatan')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -114,8 +123,10 @@ class PurchaseResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('supplier_name')
+                    ->label('Nama Supplier')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('date')
+                    ->label('Tanggal')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total')

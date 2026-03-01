@@ -19,15 +19,21 @@ class SaleResource extends Resource
     protected static ?string $model = Sale::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Sales';
+    protected static ?string $navigationLabel = 'Penjualan';
+    protected static ?string $navigationGroup = 'Penjualan';
+    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'penjualan';
+    protected static ?string $modelLabel = 'Penjualan';
+    protected static ?string $pluralModelLabel = 'Penjualan';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Sale Information')
+                Forms\Components\Section::make('Informasi Penjualan')
                     ->schema([
                         Forms\Components\Select::make('customer_id')
+                            ->label('Pelanggan')
                             ->relationship('customer', 'name')
                             ->required()
                             ->searchable()
@@ -40,10 +46,12 @@ class SaleResource extends Resource
                                 }
                             }),
                         Forms\Components\TextInput::make('invoice_number')
+                            ->label('Nomor Invoice')
                             ->default('INV/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
                             ->required()
                             ->unique(ignoreRecord: true),
                         Forms\Components\DatePicker::make('date')
+                            ->label('Tanggal')
                             ->default(now())
                             ->required(),
                         Forms\Components\DatePicker::make('due_date')
@@ -54,12 +62,13 @@ class SaleResource extends Resource
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Items')
+                Forms\Components\Section::make('Item')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
                                 Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
                                     ->relationship('product', 'name')
                                     ->required()
                                     ->searchable()
@@ -72,12 +81,14 @@ class SaleResource extends Resource
                                         }
                                     }),
                                 Forms\Components\TextInput::make('quantity')
+                                    ->label('Jumlah')
                                     ->numeric()
                                     ->required()
                                     ->default(1)
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('price')
+                                    ->label('Harga')
                                     ->required()
                                     ->prefix('Rp')
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)'))
@@ -85,7 +96,7 @@ class SaleResource extends Resource
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('discount_item')
-                                    ->label('Disc/Item')
+                                    ->label('Diskon/Unit')
                                     ->default(0)
                                     ->prefix('Rp')
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)'))
@@ -106,7 +117,7 @@ class SaleResource extends Resource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('Summary')
+                Forms\Components\Section::make('Ringkasan')
                     ->schema([
                         Forms\Components\TextInput::make('subtotal')
                             ->readOnly()
@@ -114,7 +125,7 @@ class SaleResource extends Resource
                             ->mask(RawJs::make('$money($input, ",", ".", 0)'))
                             ->afterStateHydrated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\TextInput::make('discount_invoice')
-                            ->label('Discount Invoice')
+                            ->label('Diskon Invoice')
                             ->default(0)
                             ->prefix('Rp')
                             ->mask(RawJs::make('$money($input, ",", ".", 0)'))
@@ -131,6 +142,7 @@ class SaleResource extends Resource
                             ->prefix('Rp')
                             ->mask(RawJs::make('$money($input, ",", ".", 0)')),
                         Forms\Components\Textarea::make('note')
+                            ->label('Catatan')
                             ->columnSpanFull(),
                         Forms\Components\Hidden::make('discount_item_total')
                             ->default(0),
@@ -195,12 +207,14 @@ class SaleResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Customer')
+                    ->label('Pelanggan')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('Nomor Invoice')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('date')
+                    ->label('Tanggal')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('due_date')
@@ -237,7 +251,7 @@ class SaleResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('print')
-                    ->label('Print Nota')
+                    ->label('Cetak Nota')
                     ->icon('heroicon-o-printer')
                     ->url(fn (Sale $record): string => route('sales.print', $record))
                     ->openUrlInNewTab(),

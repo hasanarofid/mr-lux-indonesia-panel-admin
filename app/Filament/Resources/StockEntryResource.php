@@ -18,15 +18,20 @@ class StockEntryResource extends Resource
     protected static ?string $model = StockEntry::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
-    protected static ?string $navigationGroup = 'Production';
+    protected static ?string $navigationLabel = 'Mutasi Stok';
+    protected static ?string $navigationGroup = 'Produksi';
+    protected static ?string $slug = 'mutasi-stok';
+    protected static ?string $modelLabel = 'Mutasi Stok';
+    protected static ?string $pluralModelLabel = 'Mutasi Stok';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Stock Entry Details')
+                Forms\Components\Section::make('Detail Mutasi Stok')
                     ->schema([
                         Forms\Components\Select::make('type')
+                            ->label('Tipe')
                             ->options([
                                 'MASUK' => 'Masuk (Stock In)',
                                 'KELUAR' => 'Keluar (Stock Out)',
@@ -36,18 +41,21 @@ class StockEntryResource extends Resource
                             ->required()
                             ->default('MASUK'),
                         Forms\Components\DatePicker::make('date')
+                            ->label('Tanggal')
                             ->required()
                             ->default(now()),
                         Forms\Components\Textarea::make('note')
+                            ->label('Catatan')
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Items')
+                Forms\Components\Section::make('Item')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
                                 Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
                                     ->relationship('product', 'name')
                                     ->required()
                                     ->searchable()
@@ -93,8 +101,10 @@ class StockEntryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('date')
+                    ->label('Tanggal')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')

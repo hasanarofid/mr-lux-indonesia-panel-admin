@@ -31,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('MR Lux Indonesia Panel Admin')
             ->brandLogo(asset('images/LOGO-MR-LUX-INDONESIA.webp'))
             ->brandLogoHeight('3rem')
-            ->favicon(asset('images/LOGO-MR-LUX-INDONESIA.webp'))
+            ->favicon(asset('images/favicon.png'))
             ->colors([
                 'primary' => Color::Amber,
                 'gray' => Color::Zinc,

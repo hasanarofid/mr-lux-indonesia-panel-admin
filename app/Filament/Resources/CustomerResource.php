@@ -18,24 +18,32 @@ class CustomerResource extends Resource
     protected static ?string $model = Customer::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationLabel = 'Pelanggan';
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $slug = 'pelanggan';
+    protected static ?string $modelLabel = 'Pelanggan';
+    protected static ?string $pluralModelLabel = 'Pelanggan';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Customer Information')
+                Forms\Components\Section::make('Informasi Pelanggan')
                     ->schema([
                         Forms\Components\TextInput::make('name')
+                            ->label('Nama')
                             ->required()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('code')
+                            ->label('Kode')
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('phone')
+                            ->label('Telepon')
                             ->tel()
                             ->maxLength(255),
                         Forms\Components\Select::make('group')
+                            ->label('Grup')
                             ->options([
                                 'PPN' => 'PPN',
                                 'Non-PPN' => 'Non-PPN',
@@ -43,6 +51,7 @@ class CustomerResource extends Resource
                             ->required()
                             ->default('Non-PPN'),
                         Forms\Components\Textarea::make('address')
+                            ->label('Alamat')
                             ->columnSpanFull(),
                     ])->columns(2),
             ]);
@@ -53,12 +62,16 @@ class CustomerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('code')
+                    ->label('Kode')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
+                    ->label('Telepon')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('group')
+                    ->label('Grup')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

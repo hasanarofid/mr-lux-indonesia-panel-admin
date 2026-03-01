@@ -18,18 +18,24 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+    protected static ?string $navigationLabel = 'Produk';
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $slug = 'produk';
+    protected static ?string $modelLabel = 'Produk';
+    protected static ?string $pluralModelLabel = 'Produk';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Product Details')
+                Forms\Components\Section::make('Detail Produk')
                     ->schema([
                         Forms\Components\TextInput::make('name')
+                            ->label('Nama')
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Select::make('category')
+                            ->label('Kategori')
                             ->options([
                                 'EPOXY' => 'EPOXY',
                                 'POLYURETHANE (PU)' => 'POLYURETHANE (PU)',
@@ -40,11 +46,11 @@ class ProductResource extends Resource
                             ->searchable()
                             ->required(),
                         Forms\Components\TextInput::make('sku')
-                            ->label('SKU/Code')
+                            ->label('SKU/Kode')
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
                         Forms\Components\Select::make('uom')
-                            ->label('UOM')
+                            ->label('Satuan')
                             ->options([
                                 'DUS' => 'DUS',
                                 'SET' => 'SET',
@@ -59,24 +65,25 @@ class ProductResource extends Resource
                             ->default(1)
                             ->required(),
                         Forms\Components\TextInput::make('price')
-                            ->label('Price per Unit')
-                            ->required()
+                            ->label('Harga per Unit')
+                             ->required()
                             ->numeric()
                             ->default(0)
                             ->prefix('Rp'),
                         Forms\Components\TextInput::make('price_per_carton')
-                            ->label('Price per Carton')
+                            ->label('Harga per Dus')
                             ->numeric()
                             ->default(0)
                             ->prefix('Rp'),
                         Forms\Components\TextInput::make('stock')
-                            ->label('Total Stock (Units)')
+                            ->label('Total Stok (Unit)')
                             ->required()
                             ->numeric()
                             ->default(0)
                             ->disabled()
                             ->dehydrated(false),
                         Forms\Components\Textarea::make('description')
+                            ->label('Deskripsi')
                             ->columnSpanFull(),
                     ])->columns(2),
             ]);
@@ -87,23 +94,28 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('category')
+                    ->label('Kategori')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('uom')
+                    ->label('Satuan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('isi')
                     ->label('Isi/Dus')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price')
+                    ->label('Harga')
                     ->money('idr')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock')
+                    ->label('Stok')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -126,7 +138,7 @@ class ProductResource extends Resource
             ])
             ->headerActions([
                 Tables\Actions\Action::make('view_stock_report')
-                    ->label('View Stock Report')
+                    ->label('Lihat Laporan Stok')
                     ->url(fn (): string => ProductResource::getUrl('stock-report'))
                     ->icon('heroicon-o-chart-bar')
                     ->color('info'),

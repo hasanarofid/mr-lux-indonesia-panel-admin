@@ -28,32 +28,65 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Pelanggan')
+                Forms\Components\Grid::make(2)
                     ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nama')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('code')
-                            ->label('Kode')
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('phone')
-                            ->label('Telepon')
-                            ->tel()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('group')
-                            ->label('Grup')
-                            ->options([
-                                'PPN' => 'PPN',
-                                'Non-PPN' => 'Non-PPN',
-                            ])
-                            ->required()
-                            ->default('Non-PPN'),
-                        Forms\Components\Textarea::make('address')
-                            ->label('Alamat')
-                            ->columnSpanFull(),
-                    ])->columns(2),
+                        Forms\Components\Section::make('Informasi Umum')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nama')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('code')
+                                    ->label('ID Pelanggan')
+                                    ->required()
+                                    ->default(fn () => 'CUST-' . strtoupper(bin2hex(random_bytes(3))))
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('category')
+                                    ->label('Kategori')
+                                    ->datalist(fn () => \App\Models\Customer::query()->whereNotNull('category')->distinct()->pluck('category')->toArray()),
+                                Forms\Components\TextInput::make('phone_business')
+                                    ->label('No. Telp. Bisnis')
+                                    ->tel(),
+                                Forms\Components\TextInput::make('handphone')
+                                    ->label('Handphone')
+                                    ->tel(),
+                                Forms\Components\TextInput::make('whatsapp')
+                                    ->label('No. WhatsApp')
+                                    ->tel(),
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email')
+                                    ->email(),
+                                Forms\Components\TextInput::make('fax')
+                                    ->label('Faximil'),
+                                Forms\Components\TextInput::make('website')
+                                    ->label('Website')
+                                    ->url(),
+                            ])->columnSpan(1),
+
+                        Forms\Components\Section::make('Info Lainnya')
+                            ->schema([
+                                Forms\Components\Textarea::make('billing_street')
+                                    ->label('Alamat Penagihan (Jalan)')
+                                    ->rows(3),
+                                Forms\Components\TextInput::make('billing_city')
+                                    ->label('Kota'),
+                                Forms\Components\TextInput::make('billing_postcode')
+                                    ->label('K.Pos'),
+                                Forms\Components\TextInput::make('billing_province')
+                                    ->label('Provinsi'),
+                                Forms\Components\TextInput::make('billing_country')
+                                    ->label('Negara'),
+                                Forms\Components\Select::make('group')
+                                    ->label('Grup PPN')
+                                    ->options([
+                                        'PPN' => 'PPN',
+                                        'Non-PPN' => 'Non-PPN',
+                                    ])
+                                    ->required()
+                                    ->default('Non-PPN'),
+                            ])->columnSpan(1),
+                    ])
             ]);
     }
 
@@ -63,16 +96,30 @@ class CustomerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('code')
-                    ->label('Kode')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('phone')
-                    ->label('Telepon')
-                    ->searchable(),
+                    ->label('ID Pelanggan')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('whatsapp')
+                    ->label('Kontak Utama')
+                    ->searchable()
+                    ->default(fn ($record) => $record->phone_business ?? $record->handphone),
+                Tables\Columns\TextColumn::make('sales_sum_grand_total')
+                    ->label('Saldo')
+                    ->sum('sales', 'grand_total')
+                    ->money('IDR', locale: 'id')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('group')
                     ->label('Grup')
-                    ->searchable(),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'PPN' => 'success',
+                        'Non-PPN' => 'warning',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -98,7 +145,7 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\SalesRelationManager::class,
         ];
     }
 

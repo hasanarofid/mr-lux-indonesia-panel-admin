@@ -13,8 +13,20 @@ class Customer extends Model
         'name',
         'code',
         'phone',
+        'phone_business',
+        'handphone',
+        'whatsapp',
+        'email',
+        'fax',
+        'website',
         'address',
+        'billing_street',
+        'billing_city',
+        'billing_postcode',
+        'billing_province',
+        'billing_country',
         'group',
+        'category',
     ];
 
     public function sales()

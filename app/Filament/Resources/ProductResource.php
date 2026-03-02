@@ -20,6 +20,7 @@ class ProductResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationLabel = 'Produk';
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?int $navigationSort = 11;
     protected static ?string $slug = 'produk';
     protected static ?string $modelLabel = 'Produk';
     protected static ?string $pluralModelLabel = 'Produk';

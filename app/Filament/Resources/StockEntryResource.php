@@ -20,6 +20,7 @@ class StockEntryResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Mutasi Stok';
     protected static ?string $navigationGroup = 'Produksi';
+    protected static ?int $navigationSort = 61;
     protected static ?string $slug = 'mutasi-stok';
     protected static ?string $modelLabel = 'Mutasi Stok';
     protected static ?string $pluralModelLabel = 'Mutasi Stok';

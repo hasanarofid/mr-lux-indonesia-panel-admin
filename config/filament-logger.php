@@ -5,7 +5,7 @@ return [
 
     'activity_resource' => \Z3d0X\FilamentLogger\Resources\ActivityResource::class,
 	'scoped_to_tenant' => true,
-	'navigation_sort' => 3,
+	'navigation_sort' => 53,
 
     'resources' => [
         'enabled' => true,

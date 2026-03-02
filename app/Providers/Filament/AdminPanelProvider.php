@@ -41,6 +41,14 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->navigationGroups([
+                'Master Data',
+                'Produksi',
+                'Pembelian',
+                'Penjualan',
+                'Laporan',
+                'User Management',
+            ])
             ->pages([
                 Pages\Dashboard::class,
             ])

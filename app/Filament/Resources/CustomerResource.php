@@ -20,6 +20,7 @@ class CustomerResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Pelanggan';
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?int $navigationSort = 12;
     protected static ?string $slug = 'pelanggan';
     protected static ?string $modelLabel = 'Pelanggan';
     protected static ?string $pluralModelLabel = 'Pelanggan';

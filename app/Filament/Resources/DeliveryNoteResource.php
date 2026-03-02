@@ -20,7 +20,7 @@ class DeliveryNoteResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'Surat Jalan';
     protected static ?string $navigationGroup = 'Penjualan';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 32;
     protected static ?string $slug = 'surat-jalan';
     protected static ?string $modelLabel = 'Surat Jalan';
     protected static ?string $pluralModelLabel = 'Surat Jalan';

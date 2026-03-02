@@ -185,7 +185,7 @@ class RoleResource extends Resource implements HasShieldPermissions
 
     public static function getNavigationSort(): ?int
     {
-        return 2;
+        return 52;
     }
 
     public static function getSubNavigationPosition(): SubNavigationPosition

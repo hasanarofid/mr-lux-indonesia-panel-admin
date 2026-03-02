@@ -21,7 +21,7 @@ class SaleResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'Penjualan';
     protected static ?string $navigationGroup = 'Penjualan';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 31;
     protected static ?string $slug = 'penjualan';
     protected static ?string $modelLabel = 'Penjualan';
     protected static ?string $pluralModelLabel = 'Penjualan';

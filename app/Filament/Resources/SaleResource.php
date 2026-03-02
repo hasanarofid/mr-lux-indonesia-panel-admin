@@ -113,8 +113,8 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $price = floatval(str_replace('.', '', $get('price') ?? 0));
-                                        $discountNominal = $price * (floatval($state) / 100);
+                                        $price = floatval($get('price') ?? 0);
+                                        $discountNominal = round($price * (floatval($state) / 100));
                                         $set('discount_item', $discountNominal);
                                         self::updateItemSubtotal($get, $set);
                                     }),
@@ -126,8 +126,8 @@ class SaleResource extends Resource
                                     ->stripCharacters('.')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $price = floatval(str_replace('.', '', $get('price') ?? 0));
-                                        $nominal = floatval(str_replace('.', '', $state ?? 0));
+                                        $price = floatval($get('price') ?? 0);
+                                        $nominal = floatval($state ?? 0);
                                         if ($price > 0) {
                                             $set('discount_percent', round(($nominal / $price) * 100, 2));
                                         }
@@ -191,10 +191,10 @@ class SaleResource extends Resource
     public static function updateItemSubtotal(Forms\Get $get, Forms\Set $set): void
     {
         $quantity = floatval($get('quantity') ?? 0);
-        $price = floatval(str_replace('.', '', $get('price') ?? 0));
-        $discount = floatval(str_replace('.', '', $get('discount_item') ?? 0));
+        $price = floatval($get('price') ?? 0);
+        $discount = floatval($get('discount_item') ?? 0);
 
-        $subtotal = $quantity * ($price - $discount);
+        $subtotal = round($quantity * ($price - $discount));
         $set('subtotal', $subtotal);
         
         // Explicitly trigger summary calculation at parent level
@@ -207,22 +207,22 @@ class SaleResource extends Resource
         $items = collect($get('items') ?? $get('../../items') ?? []);
         
         $subtotal = $items->sum(function ($item) {
-            return floatval(str_replace('.', '', $item['subtotal'] ?? 0));
+            return floatval($item['subtotal'] ?? 0);
         });
 
         $discountItemTotal = $items->sum(function ($item) {
-            $price = floatval(str_replace('.', '', $item['price'] ?? 0));
+            $price = floatval($item['price'] ?? 0);
             $quantity = floatval($item['quantity'] ?? 0);
-            $discount = floatval(str_replace('.', '', $item['discount_item'] ?? 0));
+            $discount = floatval($item['discount_item'] ?? 0);
             return $discount * $quantity;
         });
         
-        $discountInvoice = floatval(str_replace('.', '', $get('discount_invoice') ?? $get('../../discount_invoice') ?? 0));
-        $shippingCost = floatval(str_replace('.', '', $get('shipping_cost') ?? $get('../../shipping_cost') ?? 0));
+        $discountInvoice = floatval($get('discount_invoice') ?? $get('../../discount_invoice') ?? 0);
+        $shippingCost = floatval($get('shipping_cost') ?? $get('../../shipping_cost') ?? 0);
         $isPpn = $get('is_ppn') ?? $get('../../is_ppn') ?? false;
         
         $baseTotal = $subtotal - $discountInvoice;
-        $ppnAmount = $isPpn ? ($baseTotal * 0.11) : 0;
+        $ppnAmount = $isPpn ? round($baseTotal * 0.11) : 0;
         $grandTotal = $baseTotal + $ppnAmount + $shippingCost;
 
         // Try setting both local and parent for summary fields. 

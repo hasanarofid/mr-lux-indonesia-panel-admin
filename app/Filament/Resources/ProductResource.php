@@ -34,29 +34,17 @@ class ProductResource extends Resource
                             ->label('Nama')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Select::make('category')
+                        Forms\Components\TextInput::make('category')
                             ->label('Kategori')
-                            ->options([
-                                'EPOXY' => 'EPOXY',
-                                'POLYURETHANE (PU)' => 'POLYURETHANE (PU)',
-                                'NON SAG' => 'NON SAG',
-                                'ALIFATIK' => 'ALIFATIK',
-                                'ALTECO' => 'ALTECO',
-                            ])
-                            ->searchable()
+                            ->datalist(fn () => \App\Models\Product::query()->whereNotNull('category')->distinct()->pluck('category')->toArray())
                             ->required(),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU/Kode')
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
-                        Forms\Components\Select::make('uom')
+                        Forms\Components\TextInput::make('uom')
                             ->label('Satuan')
-                            ->options([
-                                'DUS' => 'DUS',
-                                'SET' => 'SET',
-                                'PCS' => 'PCS',
-                                'PAK' => 'PAK',
-                            ])
+                            ->datalist(fn () => \App\Models\Product::query()->whereNotNull('uom')->distinct()->pluck('uom')->toArray())
                             ->required()
                             ->default('PCS'),
                         Forms\Components\TextInput::make('isi')

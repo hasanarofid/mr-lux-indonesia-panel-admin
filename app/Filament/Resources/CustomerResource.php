@@ -77,14 +77,11 @@ class CustomerResource extends Resource
                                     ->label('Provinsi'),
                                 Forms\Components\TextInput::make('billing_country')
                                     ->label('Negara'),
-                                Forms\Components\Select::make('group')
-                                    ->label('Grup PPN')
-                                    ->options([
-                                        'PPN' => 'PPN',
-                                        'Non-PPN' => 'Non-PPN',
-                                    ])
+                                Forms\Components\TextInput::make('group')
+                                    ->label('Grup')
+                                    ->datalist(fn () => \App\Models\Customer::query()->whereNotNull('group')->distinct()->pluck('group')->toArray())
                                     ->required()
-                                    ->default('Non-PPN'),
+                                    ->default('Umum'),
                             ])->columnSpan(1),
                     ])
             ]);
@@ -118,6 +115,7 @@ class CustomerResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'PPN' => 'success',
                         'Non-PPN' => 'warning',
+                        default => 'gray',
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')

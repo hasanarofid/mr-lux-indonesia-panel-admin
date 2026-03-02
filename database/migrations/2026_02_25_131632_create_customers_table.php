@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('code')->unique()->nullable();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
-            $table->enum('group', ['PPN', 'Non-PPN'])->default('Non-PPN');
+            $table->string('group')->default('Umum');
             $table->timestamps();
         });
     }

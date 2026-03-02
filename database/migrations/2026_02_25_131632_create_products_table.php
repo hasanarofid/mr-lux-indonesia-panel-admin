@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('sku')->unique()->nullable();
-            $table->enum('uom', ['DUS', 'SET', 'PCS', 'PAK'])->default('PCS');
+            $table->string('uom')->default('PCS');
             $table->decimal('price', 15, 2)->default(0);
             $table->decimal('stock', 15, 2)->default(0);
             $table->text('description')->nullable();

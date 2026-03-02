@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.10.1",
         "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-permission": "^6.0",
+        "spatie/simple-excel": "^3.9",
         "z3d0x/filament-logger": "^0.8.0"
     },
     "require-dev": {

@@ -10,10 +10,14 @@ class SalesOverview extends BaseWidget
     protected function getStats(): array
     {
         return [
-            \Filament\Widgets\StatsOverviewWidget\Stat::make('Total Penjualan', 'Rp ' . number_format(\App\Models\Sale::sum('grand_total'), 0, ',', '.'))
-                ->description('Total pendapatan dari semua penjualan')
+            \Filament\Widgets\StatsOverviewWidget\Stat::make('Total Penjualan', 'Rp ' . number_format(\App\Models\Sale::where('status', 'Lunas')->sum('grand_total'), 0, ',', '.'))
+                ->description('Total pendapatan dari semua penjualan (Lunas)')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
+            \Filament\Widgets\StatsOverviewWidget\Stat::make('Invoice Belum Dibayar', \App\Models\Sale::where('status', 'Belum Lunas')->count())
+                ->description('Total invoice yang belum dibayar')
+                ->descriptionIcon('heroicon-m-clock')
+                ->color('danger'),
             \Filament\Widgets\StatsOverviewWidget\Stat::make('Total Invoice', \App\Models\Sale::count())
                 ->description('Total jumlah transaksi penjualan')
                 ->descriptionIcon('heroicon-m-document-text')

@@ -106,6 +106,7 @@ class SaleResource extends Resource
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)'))
                                     ->stripCharacters('.')
                                     ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('discount_percent')
                                     ->label('Diskon %')
@@ -125,6 +126,7 @@ class SaleResource extends Resource
                                     ->mask(RawJs::make('$money($input, ",", ".", 0)'))
                                     ->stripCharacters('.')
                                     ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $price = floatval($get('price') ?? 0);
                                         $nominal = floatval($state ?? 0);
@@ -137,7 +139,8 @@ class SaleResource extends Resource
                                     ->required()
                                     ->readOnly()
                                     ->prefix('Rp')
-                                    ->mask(RawJs::make('$money($input, ",", ".", 0)')),
+                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
                             ])
                             ->columns(6)
                             ->live()
@@ -153,20 +156,44 @@ class SaleResource extends Resource
                             ->readOnly()
                             ->prefix('Rp')
                             ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
                             ->afterStateHydrated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
-                        Forms\Components\TextInput::make('discount_invoice')
-                            ->label('Diskon Invoice')
-                            ->default(0)
-                            ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                            ->stripCharacters('.')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('discount_invoice_percent')
+                                    ->label('Diskon %')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                        $subtotal = floatval($get('subtotal') ?? 0);
+                                        $discountNominal = round($subtotal * (floatval($state) / 100));
+                                        $set('discount_invoice', $discountNominal);
+                                        self::calculateTotals($get, $set);
+                                    }),
+                                Forms\Components\TextInput::make('discount_invoice')
+                                    ->label('Diskon Rp')
+                                    ->default(0)
+                                    ->prefix('Rp')
+                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->stripCharacters('.')
+                                    ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
+                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                        $subtotal = floatval($get('subtotal') ?? 0);
+                                        $nominal = floatval($state ?? 0);
+                                        if ($subtotal > 0) {
+                                            $set('discount_invoice_percent', round(($nominal / $subtotal) * 100, 2));
+                                        }
+                                        self::calculateTotals($get, $set);
+                                    }),
+                            ]),
                         Forms\Components\TextInput::make('ppn_amount')
                             ->label('PPN (11%)')
                             ->readOnly()
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)')),
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
                         Forms\Components\TextInput::make('shipping_cost')
                             ->label('Ongkir')
                             ->default(0)
@@ -174,11 +201,13 @@ class SaleResource extends Resource
                             ->mask(RawJs::make('$money($input, ",", ".", 0)'))
                             ->stripCharacters('.')
                             ->live(onBlur: true)
+                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\TextInput::make('grand_total')
                             ->readOnly()
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)')),
+                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan')
                             ->columnSpanFull(),
@@ -218,6 +247,7 @@ class SaleResource extends Resource
         });
         
         $discountInvoice = floatval($get('discount_invoice') ?? $get('../../discount_invoice') ?? 0);
+        $discountInvoicePercent = floatval($get('discount_invoice_percent') ?? $get('../../discount_invoice_percent') ?? 0);
         $shippingCost = floatval($get('shipping_cost') ?? $get('../../shipping_cost') ?? 0);
         $isPpn = $get('is_ppn') ?? $get('../../is_ppn') ?? false;
         
@@ -229,15 +259,17 @@ class SaleResource extends Resource
         $isInRow = !empty($get('product_id'));
 
         if ($isInRow) {
-            $set('../../subtotal', $subtotal);
-            $set('../../discount_item_total', $discountItemTotal);
-            $set('../../ppn_amount', $ppnAmount);
-            $set('../../grand_total', $grandTotal);
+            $set('../../subtotal', round($subtotal));
+            $set('../../discount_item_total', round($discountItemTotal));
+            $set('../../discount_invoice', round($discountInvoice));
+            $set('../../ppn_amount', round($ppnAmount));
+            $set('../../grand_total', round($grandTotal));
         } else {
-            $set('subtotal', $subtotal);
-            $set('discount_item_total', $discountItemTotal);
-            $set('ppn_amount', $ppnAmount);
-            $set('grand_total', $grandTotal);
+            $set('subtotal', round($subtotal));
+            $set('discount_item_total', round($discountItemTotal));
+            $set('discount_invoice', round($discountInvoice));
+            $set('ppn_amount', round($ppnAmount));
+            $set('grand_total', round($grandTotal));
         }
     }
 

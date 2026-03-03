@@ -17,6 +17,7 @@ class Sale extends Model
         'subtotal',
         'discount_item_total',
         'discount_invoice',
+        'discount_invoice_percent',
         'is_ppn',
         'ppn_amount',
         'grand_total',

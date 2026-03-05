@@ -10,7 +10,9 @@ class SalesReportPrintController extends Controller
 {
     public function show(Request $request)
     {
-        $query = Sale::query()->with('customer');
+        $query = Sale::query()
+            ->select(['id', 'customer_id', 'invoice_number', 'date', 'grand_total', 'status'])
+            ->with(['customer:id,name']);
 
         if ($request->filled('from')) {
             $query->whereDate('date', '>=', $request->from);

@@ -10,6 +10,16 @@ use Z3d0X\FilamentLogger\Resources\ActivityResource as BaseActivityResource;
 
 class ActivityResource extends BaseActivityResource
 {
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['causer', 'subject']);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['causer', 'subject']);
+    }
+
     public static function getSubjectLabel(?Model $record): string
     {
         if (!$record || !$record->subject_type) {

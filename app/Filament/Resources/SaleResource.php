@@ -37,7 +37,7 @@ class SaleResource extends Resource
                             ->relationship('customer', 'name')
                             ->required()
                             ->searchable()
-                            ->preload()
+                            ->searchable()
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $customer = \App\Models\Customer::find($state);
@@ -83,7 +83,8 @@ class SaleResource extends Resource
                                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->sku} - {$record->name}")
                                     ->searchable(['name', 'sku'])
                                     ->required()
-                                    ->preload()
+                                    ->searchable(['name', 'sku'])
+                                    ->required()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($state);
@@ -335,6 +336,11 @@ class SaleResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['customer']);
     }
 
     public static function getRelations(): array

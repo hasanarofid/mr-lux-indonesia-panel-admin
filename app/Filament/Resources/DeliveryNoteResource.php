@@ -35,8 +35,7 @@ class DeliveryNoteResource extends Resource
                             ->label('Nomor Invoice')
                             ->relationship('sale', 'invoice_number')
                             ->required()
-                            ->searchable()
-                            ->preload(),
+                            ->searchable(),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
                             ->default('SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
@@ -112,6 +111,11 @@ class DeliveryNoteResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['sale']);
     }
 
     public static function getRelations(): array

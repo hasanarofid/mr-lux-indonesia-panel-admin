@@ -75,7 +75,7 @@ class SalesReportResource extends Resource
                     ->label('Pelanggan')
                     ->relationship('customer', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->searchable(),
             ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->actions([
@@ -96,6 +96,11 @@ class SalesReportResource extends Resource
                     ]))
                     ->openUrlInNewTab(),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['customer']);
     }
 
     public static function getPages(): array

@@ -55,7 +55,6 @@ class PurchaseResource extends Resource
                                     ->relationship('product', 'name')
                                     ->required()
                                     ->searchable()
-                                    ->preload()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                         $product = \App\Models\Product::find($state);

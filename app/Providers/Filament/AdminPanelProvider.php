@@ -53,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->resources([
-                \Z3d0X\FilamentLogger\Resources\ActivityResource::class,
+                \App\Filament\Resources\ActivityResource::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

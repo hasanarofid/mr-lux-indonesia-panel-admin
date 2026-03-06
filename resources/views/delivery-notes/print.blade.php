@@ -1,112 +1,184 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Surat Jalan - {{ $deliveryNote->number }}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
         body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
+            background: #fff;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+
+        .no-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
         }
-        .company-info h1 {
-            margin: 0;
-            font-size: 18px;
+
+        .no-print button {
+            padding: 8px 16px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
         }
-        .invoice-info {
-            text-align: right;
+
+        .intro-text {
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+            color: #555;
         }
-        table {
+
+        .content-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        th, td {
-            border: 1px solid #000;
-            padding: 5px;
+
+        .content-table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 10px 8px;
             text-align: left;
         }
-        .footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-around;
+
+        .content-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
         }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .delivery-info {
+            margin-top: 20px;
+            display: flex;
+            gap: 40px;
+            font-size: 12px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary-color, #d32f2f);
+        }
+
+        .info-item span:first-child {
+            color: #888;
+            margin-right: 10px;
+        }
+
+        .info-item span:last-child {
+            font-weight: 700;
+        }
+
+        .footer-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 180px;
+        }
+
+        .signature-space {
+            height: 60px;
+        }
+
+        .signature-name {
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
         @media print {
             .no-print { display: none; }
+            body { padding: 30px; }
         }
     </style>
 </head>
 <body>
     <div class="no-print">
-        <button onclick="window.print()">Print</button>
+        <button onclick="window.print()">Cetak Dokumen</button>
     </div>
 
-    <div class="header">
-        <div class="company-info">
-            <h1>MR LUX INDONESIA</h1>
-            <p>Jln. Wr Supratman NO.31 Gisikdrono Semarang Barat</p>
-            <p>Telp. (024) 7624836 / +62818452014</p>
-        </div>
-        <div class="invoice-info">
-            <h2>SURAT JALAN</h2>
-            <p>No: {{ $deliveryNote->number }}</p>
-            <p>Tgl: {{ $deliveryNote->date }}</p>
-            <p>Ref: {{ $deliveryNote->sale->invoice_number }}</p>
-            <p>Cust: {{ $deliveryNote->sale->customer->name }}</p>
-        </div>
-    </div>
+    @include('partials.kop', [
+        'title' => 'SURAT JALAN',
+        'number' => $deliveryNote->number,
+        'date' => $deliveryNote->date,
+        'ref' => $deliveryNote->sale->invoice_number,
+        'customerName' => $deliveryNote->sale->customer->name,
+        'customerAddress' => $deliveryNote->sale->customer->address ?? 'Alamat tidak tersedia'
+    ])
 
-    <p>Mohon diterima barang-barang tersebut di bawah ini:</p>
+    <p class="intro-text">Mohon diterima barang-barang tersebut di bawah ini:</p>
 
-    <table>
+    <table class="content-table">
         <thead>
             <tr>
-                <th>No</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>UOM</th>
-                <th>Note</th>
+                <th width="5%" class="text-center">No</th>
+                <th width="65%">Deskripsi Produk</th>
+                <th width="15%" class="text-center">Kuantitas</th>
+                <th width="15%" class="text-center">UOM</th>
             </tr>
         </thead>
         <tbody>
             @foreach($deliveryNote->sale->items as $index => $item)
             <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $item->product->name }}</td>
-                <td>{{ number_format($item->quantity) }}</td>
-                <td>{{ $item->product->uom }}</td>
-                <td></td>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>
+                    <div style="font-weight: 600;">{{ $item->product->name }}</div>
+                    <div style="font-size: 9px; color: #777;">Code: {{ $item->product->product_code }}</div>
+                </td>
+                <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
+                <td class="text-center">{{ $item->product->uom }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
 
-    <div style="margin-top: 20px;">
-        <p>Driver: {{ $deliveryNote->driver_name }}</p>
-        <p>No. Kendaraan: {{ $deliveryNote->vehicle_number }}</p>
+    <div class="delivery-info">
+        <div class="info-item">
+            <span>Supir:</span>
+            <span>{{ $deliveryNote->driver_name }}</span>
+        </div>
+        <div class="info-item">
+            <span>No. Kendaraan:</span>
+            <span>{{ $deliveryNote->vehicle_number }}</span>
+        </div>
     </div>
 
-    <div class="footer">
-        <div>
+    <div class="footer-section">
+        <div class="signature-box">
             <p>Diterima Oleh,</p>
-            <br><br>
-            <p>( ............ )</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">( ............................ )</p>
         </div>
-        <div>
-            <p>Pengirim/Driver,</p>
-            <br><br>
-            <p>( ............ )</p>
+        <div class="signature-box">
+            <p>Pengirim / Driver,</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">( {{ $deliveryNote->driver_name }} )</p>
         </div>
-        <div>
+        <div class="signature-box">
             <p>Hormat Kami,</p>
-            <br><br>
-            <p>( ............ )</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">( MR LUX INDONESIA )</p>
         </div>
     </div>
 </body>

@@ -335,7 +335,7 @@ class SaleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('IDR', locale: 'id')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . self::formatMoney($state))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.category')
                     ->label('Kategori Pelanggan')

@@ -1,129 +1,209 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Nota Penjualan - {{ $sale->invoice_number }}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
         body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
+            background: #fff;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+
+        .no-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
         }
-        .company-info h1 {
-            margin: 0;
-            font-size: 18px;
+
+        .no-print button {
+            padding: 8px 16px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
         }
-        .invoice-info {
-            text-align: right;
-        }
-        table {
+
+        .content-table {
             width: 100%;
             border-collapse: collapse;
+            margin: 20px 0;
         }
-        th, td {
-            border: 1px solid #000;
-            padding: 5px;
+
+        .content-table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 10px 8px;
             text-align: left;
         }
-        .totals {
-            margin-top: 10px;
-            float: right;
-            width: 300px;
+
+        .content-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
         }
-        .totals div {
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .summary-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .summary-table {
+            width: 300px;
+            border-collapse: collapse;
+        }
+
+        .summary-table td {
+            padding: 5px 8px;
+            font-size: 12px;
+        }
+
+        .summary-label {
+            color: #666;
+            text-align: right;
+        }
+
+        .summary-value {
+            text-align: right;
+            font-weight: 600;
+            width: 120px;
+        }
+
+        .grand-total-row td {
+            border-top: 2px solid #d32f2f;
+            color: #d32f2f;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            padding-top: 10px !important;
+        }
+
+        .footer-section {
+            margin-top: 40px;
             display: flex;
             justify-content: space-between;
-            padding: 2px 0;
         }
-        .footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-around;
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
         }
+
+        .signature-space {
+            height: 60px;
+        }
+
+        .signature-name {
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
         @media print {
             .no-print { display: none; }
+            body { padding: 30px; }
         }
     </style>
 </head>
 <body>
     <div class="no-print">
-        <button onclick="window.print()">Print</button>
+        <button onclick="window.print()">Cetak Dokumen</button>
     </div>
 
-    <div class="header">
-        <div class="company-info">
-            <h1>MR LUX INDONESIA</h1>
-            <p>Jln. Wr Supratman NO.31 Gisikdrono Semarang Barat</p>
-            <p>Telp. (024) 7624836 / +62818452014</p>
-        </div>
-        <div class="invoice-info">
-            <h2>NOTA PENJUALAN</h2>
-            <p>No: {{ $sale->invoice_number }}</p>
-            <p>Tgl: {{ $sale->date }}</p>
-            <p>Cust: {{ $sale->customer->name }}</p>
-        </div>
-    </div>
+    @include('partials.kop', [
+        'title' => 'FAKTUR PENJUALAN',
+        'number' => $sale->invoice_number,
+        'date' => $sale->date,
+        'customerName' => $sale->customer->name,
+        'customerAddress' => $sale->customer->address ?? 'Alamat tidak tersedia'
+    ])
 
-    <table>
+    <table class="content-table">
         <thead>
             <tr>
-                <th>No</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>UOM</th>
-                <th>Price</th>
-                <th>Disc</th>
-                <th>Subtotal</th>
+                <th width="5%" class="text-center">No</th>
+                <th width="45%">Deskripsi Produk</th>
+                <th width="10%" class="text-center">Qty</th>
+                <th width="10%" class="text-center">UOM</th>
+                <th width="15%" class="text-right">Harga Satuan</th>
+                <th width="15%" class="text-right">Subtotal</th>
             </tr>
         </thead>
         <tbody>
             @foreach($sale->items as $index => $item)
             <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $item->product->name }}</td>
-                <td>{{ number_format($item->quantity) }}</td>
-                <td>{{ $item->product->uom }}</td>
-                <td>{{ number_format($item->price) }}</td>
-                <td>{{ number_format($item->discount_item) }}</td>
-                <td>{{ number_format($item->subtotal) }}</td>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>
+                    <div style="font-weight: 600;">{{ $item->product->name }}</div>
+                    <div style="font-size: 9px; color: #777;">Code: {{ $item->product->sku }}</div>
+                </td>
+                <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
+                <td class="text-center">{{ $item->product->uom }}</td>
+                <td class="text-right">Rp {{ number_format((float)($item->price ?? 0), 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$item->subtotal), 0, ',', '.') }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
 
-    <div class="totals">
-        <div><span>Subtotal:</span> <span>{{ number_format($sale->subtotal) }}</span></div>
-        @if($sale->discount_invoice > 0)
-        <div><span>Disc. Nota:</span> <span>{{ number_format($sale->discount_invoice) }}</span></div>
-        @endif
-        @if($sale->is_ppn)
-        <div><span>PPN (11%):</span> <span>{{ number_format($sale->ppn_amount) }}</span></div>
-        @endif
-        @if($sale->shipping_cost > 0)
-        <div><span>Ongkir:</span> <span>{{ number_format($sale->shipping_cost) }}</span></div>
-        @endif
-        <div style="font-weight: bold; border-top: 1px solid #000; margin-top: 5px; padding-top: 5px;">
-            <span>TOTAL:</span> <span>{{ number_format($sale->grand_total) }}</span>
-        </div>
+    <div class="summary-container">
+        <table class="summary-table">
+            <tr>
+                <td class="summary-label">Subtotal</td>
+                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->subtotal), 0, ',', '.') }}</td>
+            </tr>
+            @if($sale->discount_invoice > 0)
+            <tr>
+                <td class="summary-label">Potongan Nota</td>
+                <td class="summary-value">- Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->discount_invoice), 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($sale->is_ppn)
+            <tr>
+                <td class="summary-label">PPN (11%)</td>
+                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->ppn_amount), 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($sale->shipping_cost > 0)
+            <tr>
+                <td class="summary-label">Biaya Pengiriman</td>
+                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->shipping_cost), 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            <tr class="grand-total-row">
+                <td class="summary-label">TOTAL AKHIR</td>
+                <td class="summary-value" style="color: #d32f2f;">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->grand_total), 0, ',', '.') }}</td>
+            </tr>
+        </table>
     </div>
 
-    <div class="footer">
-        <div>
-            <p>Tanda Terima,</p>
-            <br><br>
-            <p>( ............ )</p>
-        </div>
-        <div>
+    <div class="footer-section">
+        <div class="signature-box">
             <p>Hormat Kami,</p>
-            <br><br>
-            <p>( ............ )</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">( MR LUX INDONESIA )</p>
+        </div>
+        <div class="signature-box">
+            <p>Penerima,</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">( {{ $sale->customer->name }} )</p>
         </div>
     </div>
 </body>

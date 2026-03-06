@@ -69,7 +69,7 @@ class SaleResource extends Resource
                         Forms\Components\Toggle::make('is_ppn')
                             ->label('Include PPN (11%)')
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Item')
@@ -80,9 +80,7 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->sku} - {$record->name}")
-                                    ->searchable(['name', 'sku'])
-                                    ->required()
+                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}")
                                     ->searchable(['name', 'sku'])
                                     ->required()
                                     ->live()
@@ -90,6 +88,7 @@ class SaleResource extends Resource
                                         $product = \App\Models\Product::find($state);
                                         if ($product) {
                                             $set('price', $product->price);
+                                            $set('quantity', 1);
                                         }
                                         self::updateItemSubtotal($get, $set);
                                     }),
@@ -98,54 +97,58 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->required()
                                     ->default(1)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
+                                    ->live()
+                                    ->extraInputAttributes(['onkeypress' => 'return event.charCode >= 48 && event.charCode <= 57'])
+                                    ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga')
                                     ->required()
                                     ->prefix('Rp')
-                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
-                                    ->live(onBlur: true)
-                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
-                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
+                                    ->live(debounce: 500)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
+                                        self::updateItemSubtotal($get, $set);
+                                    }),
                                 Forms\Components\TextInput::make('discount_percent')
                                     ->label('Diskon %')
                                     ->numeric()
                                     ->default(0)
-                                    ->live(onBlur: true)
+                                    ->live()
+                                    ->extraInputAttributes(['onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46'])
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $price = floatval($get('price') ?? 0);
-                                        $discountNominal = round($price * (floatval($state) / 100));
-                                        $set('discount_item', $discountNominal);
+                                        $price = self::parseNumber($get('price') ?? 0);
+                                        $discountNominal = round($price * (self::parseNumber($state) / 100));
+                                        $set('discount_item', self::formatMoney($discountNominal));
                                         self::updateItemSubtotal($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('discount_item')
                                     ->label('Diskon Rp')
                                     ->default(0)
                                     ->prefix('Rp')
-                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
-                                    ->live(onBlur: true)
-                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
+                                    ->live(debounce: 500)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $price = floatval($get('price') ?? 0);
-                                        $nominal = floatval($state ?? 0);
+                                        $price = self::parseNumber($get('price') ?? 0);
+                                        $nominal = self::parseNumber($state ?? 0);
                                         if ($price > 0) {
                                             $set('discount_percent', round(($nominal / $price) * 100, 2));
                                         }
+                                        $set('discount_item', self::formatMoney($nominal));
                                         self::updateItemSubtotal($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('subtotal')
                                     ->required()
                                     ->readOnly()
                                     ->prefix('Rp')
-                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
+                                    ->formatStateUsing(fn ($state) => self::formatMoney($state)),
                             ])
                             ->columns(6)
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set))
+                            ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set))
                             ->extraAttributes([
                                 'onkeydown' => "if (event.key === 'Enter') { event.preventDefault(); return false; }",
                             ]),
@@ -156,59 +159,57 @@ class SaleResource extends Resource
                         Forms\Components\TextInput::make('subtotal')
                             ->readOnly()
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
+                            ->formatStateUsing(fn ($state) => self::formatMoney($state))
                             ->afterStateHydrated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(3)
                             ->schema([
                                 Forms\Components\TextInput::make('discount_invoice_percent')
                                     ->label('Diskon %')
                                     ->numeric()
                                     ->default(0)
-                                    ->live(onBlur: true)
+                                    ->live()
+                                    ->extraInputAttributes(['onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46'])
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $subtotal = floatval($get('subtotal') ?? 0);
-                                        $discountNominal = round($subtotal * (floatval($state) / 100));
-                                        $set('discount_invoice', $discountNominal);
+                                        $subtotal = self::parseNumber($get('subtotal') ?? 0);
+                                        $discountNominal = round($subtotal * (self::parseNumber($state) / 100));
+                                        $set('discount_invoice', self::formatMoney($discountNominal));
                                         self::calculateTotals($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('discount_invoice')
                                     ->label('Diskon Rp')
                                     ->default(0)
                                     ->prefix('Rp')
-                                    ->mask(RawJs::make('$money($input, ",", ".", 0)'))
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
-                                    ->live(onBlur: true)
-                                    ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
+                                    ->live(debounce: 500)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $subtotal = floatval($get('subtotal') ?? 0);
-                                        $nominal = floatval($state ?? 0);
+                                        $subtotal = self::parseNumber($get('subtotal') ?? 0);
+                                        $nominal = self::parseNumber($state ?? 0);
                                         if ($subtotal > 0) {
                                             $set('discount_invoice_percent', round(($nominal / $subtotal) * 100, 2));
                                         }
                                         self::calculateTotals($get, $set);
                                     }),
+                                Forms\Components\TextInput::make('shipping_cost')
+                                    ->label('Ongkir')
+                                    ->default(0)
+                                    ->prefix('Rp')
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                                    ->stripCharacters('.')
+                                    ->live(debounce: 500)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                             ]),
                         Forms\Components\TextInput::make('ppn_amount')
                             ->label('PPN (11%)')
                             ->readOnly()
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
-                        Forms\Components\TextInput::make('shipping_cost')
-                            ->label('Ongkir')
-                            ->default(0)
-                            ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                            ->stripCharacters('.')
-                            ->live(onBlur: true)
-                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0)))
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
+                            ->formatStateUsing(fn ($state) => self::formatMoney($state)),
                         Forms\Components\TextInput::make('grand_total')
                             ->readOnly()
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, ",", ".", 0)'))
-                            ->formatStateUsing(fn ($state) => round(floatval($state ?? 0))),
+                            ->formatStateUsing(fn ($state) => self::formatMoney($state)),
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan')
                             ->columnSpanFull(),
@@ -218,14 +219,34 @@ class SaleResource extends Resource
             ]);
     }
 
+    public static function formatMoney($value): string
+    {
+        return number_format(self::parseNumber($value), 0, ',', '.');
+    }
+
+    public static function parseNumber($value): float
+    {
+        if (is_null($value) || $value === '') {
+            return 0;
+        }
+
+        $value = (string)$value;
+        $value = str_replace(['Rp', ' '], '', $value);
+
+        // Strip everything except digits
+        $cleanDigits = preg_replace('/[^0-9]/', '', $value);
+        
+        return $cleanDigits !== '' ? (float) $cleanDigits : 0;
+    }
+
     public static function updateItemSubtotal(Forms\Get $get, Forms\Set $set): void
     {
-        $quantity = floatval($get('quantity') ?? 0);
-        $price = floatval($get('price') ?? 0);
-        $discount = floatval($get('discount_item') ?? 0);
+        $quantity = self::parseNumber($get('quantity') ?? 0);
+        $price = self::parseNumber($get('price') ?? 0);
+        $discount = self::parseNumber($get('discount_item') ?? 0);
 
         $subtotal = round($quantity * ($price - $discount));
-        $set('subtotal', $subtotal);
+        $set('subtotal', self::formatMoney($subtotal));
         
         // Explicitly trigger summary calculation at parent level
         self::calculateTotals($get, $set);
@@ -237,40 +258,40 @@ class SaleResource extends Resource
         $items = collect($get('items') ?? $get('../../items') ?? []);
         
         $subtotal = $items->sum(function ($item) {
-            return floatval($item['subtotal'] ?? 0);
+            return self::parseNumber($item['subtotal'] ?? 0);
         });
 
         $discountItemTotal = $items->sum(function ($item) {
-            $price = floatval($item['price'] ?? 0);
-            $quantity = floatval($item['quantity'] ?? 0);
-            $discount = floatval($item['discount_item'] ?? 0);
+            $price = self::parseNumber($item['price'] ?? 0);
+            $quantity = self::parseNumber($item['quantity'] ?? 0);
+            $discount = self::parseNumber($item['discount_item'] ?? 0);
             return $discount * $quantity;
         });
         
-        $discountInvoice = floatval($get('discount_invoice') ?? $get('../../discount_invoice') ?? 0);
-        $discountInvoicePercent = floatval($get('discount_invoice_percent') ?? $get('../../discount_invoice_percent') ?? 0);
-        $shippingCost = floatval($get('shipping_cost') ?? $get('../../shipping_cost') ?? 0);
+        $discountInvoice = self::parseNumber($get('discount_invoice') ?? $get('../../discount_invoice') ?? 0);
+        $discountInvoicePercent = self::parseNumber($get('discount_invoice_percent') ?? $get('../../discount_invoice_percent') ?? 0);
+        $shippingCost = self::parseNumber($get('shipping_cost') ?? $get('../../shipping_cost') ?? 0);
         $isPpn = $get('is_ppn') ?? $get('../../is_ppn') ?? false;
-        
+
         $baseTotal = $subtotal - $discountInvoice;
         $ppnAmount = $isPpn ? round($baseTotal * 0.11) : 0;
         $grandTotal = $baseTotal + $ppnAmount + $shippingCost;
 
-        // Try setting both local and parent for summary fields. 
+        // Try setting both local and parent for summary fields.
         $isInRow = !empty($get('product_id'));
 
         if ($isInRow) {
-            $set('../../subtotal', round($subtotal));
+            $set('../../subtotal', self::formatMoney($subtotal));
             $set('../../discount_item_total', round($discountItemTotal));
-            $set('../../discount_invoice', round($discountInvoice));
-            $set('../../ppn_amount', round($ppnAmount));
-            $set('../../grand_total', round($grandTotal));
+            $set('../../discount_invoice', self::formatMoney($discountInvoice));
+            $set('../../ppn_amount', self::formatMoney($ppnAmount));
+            $set('../../grand_total', self::formatMoney($grandTotal));
         } else {
-            $set('subtotal', round($subtotal));
+            $set('subtotal', self::formatMoney($subtotal));
             $set('discount_item_total', round($discountItemTotal));
-            $set('discount_invoice', round($discountInvoice));
-            $set('ppn_amount', round($ppnAmount));
-            $set('grand_total', round($grandTotal));
+            $set('discount_invoice', self::formatMoney($discountInvoice));
+            $set('ppn_amount', self::formatMoney($ppnAmount));
+            $set('grand_total', self::formatMoney($grandTotal));
         }
     }
 
@@ -297,7 +318,7 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'Lunas' => 'success',
                         'Belum Lunas' => 'warning',
                         'Dibatalkan' => 'danger',
@@ -307,7 +328,8 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('age')
                     ->label('Umur (hr)')
                     ->state(function (Sale $record): int {
-                        if (!$record->date) return 0;
+                        if (!$record->date)
+                            return 0;
                         return now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($record->date)->startOfDay(), false) * -1;
                     })
                     ->sortable(),
@@ -327,7 +349,7 @@ class SaleResource extends Resource
                 Tables\Actions\Action::make('print')
                     ->label('Cetak Nota')
                     ->icon('heroicon-o-printer')
-                    ->url(fn (Sale $record): string => route('sales.print', $record))
+                    ->url(fn(Sale $record): string => route('sales.print', $record))
                     ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
             ])

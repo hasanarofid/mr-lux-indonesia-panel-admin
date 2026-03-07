@@ -16,8 +16,10 @@ class Product extends Model
         'sku',
         'uom',
         'isi',
+        'isi_set',
         'price',
         'price_per_carton',
+        'price_per_set',
         'stock',
         'description',
     ];

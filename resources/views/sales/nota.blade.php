@@ -155,9 +155,9 @@
                     <div style="font-size: 9px; color: #777;">Code: {{ $item->product->sku }}</div>
                 </td>
                 <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
-                <td class="text-center">{{ $item->product->uom }}</td>
+                <td class="text-center">{{ $item->unit ?? $item->product->uom }}</td>
                 <td class="text-right">Rp {{ number_format((float)($item->price ?? 0), 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$item->subtotal), 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format((float)($item->subtotal ?? 0), 0, ',', '.') }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -167,29 +167,29 @@
         <table class="summary-table">
             <tr>
                 <td class="summary-label">Subtotal</td>
-                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->subtotal), 0, ',', '.') }}</td>
+                <td class="summary-value">Rp {{ number_format((float)($sale->subtotal ?? 0), 0, ',', '.') }}</td>
             </tr>
             @if($sale->discount_invoice > 0)
             <tr>
                 <td class="summary-label">Potongan Nota</td>
-                <td class="summary-value">- Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->discount_invoice), 0, ',', '.') }}</td>
+                <td class="summary-value">- Rp {{ number_format((float)($sale->discount_invoice ?? 0), 0, ',', '.') }}</td>
             </tr>
             @endif
             @if($sale->is_ppn)
             <tr>
                 <td class="summary-label">PPN (11%)</td>
-                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->ppn_amount), 0, ',', '.') }}</td>
+                <td class="summary-value">Rp {{ number_format((float)($sale->ppn_amount ?? 0), 0, ',', '.') }}</td>
             </tr>
             @endif
             @if($sale->shipping_cost > 0)
             <tr>
                 <td class="summary-label">Biaya Pengiriman</td>
-                <td class="summary-value">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->shipping_cost), 0, ',', '.') }}</td>
+                <td class="summary-value">Rp {{ number_format((float)($sale->shipping_cost ?? 0), 0, ',', '.') }}</td>
             </tr>
             @endif
             <tr class="grand-total-row">
                 <td class="summary-label">TOTAL AKHIR</td>
-                <td class="summary-value" style="color: #d32f2f;">Rp {{ number_format(preg_replace('/[^0-9]/', '', (string)$sale->grand_total), 0, ',', '.') }}</td>
+                <td class="summary-value" style="color: #d32f2f;">Rp {{ number_format((float)($sale->grand_total ?? 0), 0, ',', '.') }}</td>
             </tr>
         </table>
     </div>

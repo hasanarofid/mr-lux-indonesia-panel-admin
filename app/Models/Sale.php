@@ -25,6 +25,19 @@ class Sale extends Model
         'status',
         'note',
     ];
+    
+    protected $casts = [
+        'date' => 'date',
+        'due_date' => 'date',
+        'is_ppn' => 'boolean',
+        'subtotal' => 'decimal:2',
+        'discount_item_total' => 'decimal:2',
+        'discount_invoice' => 'decimal:2',
+        'discount_invoice_percent' => 'decimal:2',
+        'ppn_amount' => 'decimal:2',
+        'grand_total' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',
+    ];
 
     public function customer()
     {

@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -75,21 +76,30 @@ class StockEntryResource extends Resource
                                     ->dehydrated(false),
                                 Forms\Components\TextInput::make('quantity_carton')
                                     ->label('Jumlah Dus')
-                                    ->numeric()
+                                    ->required()
                                     ->default(0)
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                                    ->stripCharacters('.')
                                     ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity_unit')
                                     ->label('Eceran (Pcs)')
-                                    ->numeric()
+                                    ->required()
                                     ->default(0)
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                                    ->stripCharacters('.')
                                     ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Total Pcs')
-                                    ->numeric()
                                     ->required()
-                                    ->readOnly(),
+                                    ->readOnly()
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state)),
                             ])
                             ->columns(5)
                             ->itemLabel(fn (array $state): ?string => (\App\Models\Product::find($state['product_id'])?->name ?? 'Item') . ' (' . ($state['quantity'] ?? 0) . ' pcs)'),

@@ -54,9 +54,11 @@ class SaleResource extends Resource
                         Forms\Components\DatePicker::make('date')
                             ->label('Tanggal')
                             ->default(now())
-                            ->required(),
+                            ->required()
+                            ->native(false),
                         Forms\Components\DatePicker::make('due_date')
-                            ->label('Jatuh Tempo'),
+                            ->label('Jatuh Tempo')
+                            ->native(false),
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
@@ -79,26 +81,65 @@ class SaleResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
-                                    ->relationship('product', 'name')
-                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}")
+                                    ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0))
+                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name} (Stok: " . number_format($record->stock, 0, ',', '.') . ")")
                                     ->searchable(['name', 'sku'])
                                     ->required()
+                                    ->rules([
+                                        fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) {
+                                            if (!$value) return;
+                                            $product = \App\Models\Product::find($value);
+                                            if (!$product || $product->stock <= 0) {
+                                                $fail("Stok produk ini sedang kosong.");
+                                            }
+                                        },
+                                    ])
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($state);
                                         if ($product) {
-                                            $set('price', $product->price);
+                                            $unit = $get('unit') ?? 'PCS';
+                                            $price = match($unit) {
+                                                'Dus' => $product->price_per_carton,
+                                                'Set' => $product->price_per_set,
+                                                default => $product->price,
+                                            };
+                                            $set('price', number_format($price, 0, ',', '.'));
                                             $set('quantity', 1);
+                                        }
+                                        self::updateItemSubtotal($get, $set);
+                                    }),
+                                Forms\Components\Select::make('unit')
+                                    ->label('Satuan')
+                                    ->options([
+                                        'PCS' => 'PCS',
+                                        'Dus' => 'Dus',
+                                        'Set' => 'Set',
+                                    ])
+                                    ->default('PCS')
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        $product = \App\Models\Product::find($get('product_id'));
+                                        if ($product) {
+                                            $price = match($state) {
+                                                'Dus' => $product->price_per_carton,
+                                                'Set' => $product->price_per_set,
+                                                default => $product->price,
+                                            };
+                                            $set('price', number_format($price, 0, ',', '.'));
                                         }
                                         self::updateItemSubtotal($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
-                                    ->numeric()
                                     ->required()
                                     ->default(1)
-                                    ->live()
-                                    ->extraInputAttributes(['onkeypress' => 'return event.charCode >= 48 && event.charCode <= 57'])
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                                    ->stripCharacters('.')
+                                    ->live(onBlur: true)
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga')
@@ -106,8 +147,9 @@ class SaleResource extends Resource
                                     ->prefix('Rp')
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
-                                    ->live(debounce: 500)
+                                    ->live(onBlur: true)
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                         self::updateItemSubtotal($get, $set);
                                     }),
@@ -129,8 +171,9 @@ class SaleResource extends Resource
                                     ->prefix('Rp')
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
-                                    ->live(debounce: 500)
+                                    ->live(onBlur: true)
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $price = self::parseNumber($get('price') ?? 0);
                                         $nominal = self::parseNumber($state ?? 0);
@@ -144,7 +187,8 @@ class SaleResource extends Resource
                                     ->required()
                                     ->readOnly()
                                     ->prefix('Rp')
-                                    ->formatStateUsing(fn ($state) => self::formatMoney($state)),
+                                    ->formatStateUsing(fn ($state) => self::formatMoney($state))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state)),
                             ])
                             ->columns(6)
                             ->live()
@@ -160,6 +204,7 @@ class SaleResource extends Resource
                             ->readOnly()
                             ->prefix('Rp')
                             ->formatStateUsing(fn ($state) => self::formatMoney($state))
+                            ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                             ->afterStateHydrated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                         Forms\Components\Grid::make(3)
                             ->schema([
@@ -183,6 +228,7 @@ class SaleResource extends Resource
                                     ->stripCharacters('.')
                                     ->live(debounce: 500)
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $subtotal = self::parseNumber($get('subtotal') ?? 0);
                                         $nominal = self::parseNumber($state ?? 0);
@@ -199,17 +245,20 @@ class SaleResource extends Resource
                                     ->stripCharacters('.')
                                     ->live(debounce: 500)
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
                             ]),
                         Forms\Components\TextInput::make('ppn_amount')
-                            ->label('PPN (11%)')
-                            ->readOnly()
-                            ->prefix('Rp')
-                            ->formatStateUsing(fn ($state) => self::formatMoney($state)),
-                        Forms\Components\TextInput::make('grand_total')
-                            ->readOnly()
-                            ->prefix('Rp')
-                            ->formatStateUsing(fn ($state) => self::formatMoney($state)),
+                                    ->label('PPN (11%)')
+                                    ->readOnly()
+                                    ->prefix('Rp')
+                                    ->formatStateUsing(fn ($state) => self::formatMoney($state))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state)),
+                                Forms\Components\TextInput::make('grand_total')
+                                    ->readOnly()
+                                    ->prefix('Rp')
+                                    ->formatStateUsing(fn ($state) => self::formatMoney($state))
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state)),
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan')
                             ->columnSpanFull(),
@@ -230,13 +279,35 @@ class SaleResource extends Resource
             return 0;
         }
 
+        // If it's already a float/int (from DB or already parsed state)
+        if (is_float($value) || is_int($value)) {
+            return round((float)$value);
+        }
+
         $value = (string)$value;
         $value = str_replace(['Rp', ' '], '', $value);
 
-        // Strip everything except digits
-        $cleanDigits = preg_replace('/[^0-9]/', '', $value);
+        // Ambiguity check: if it's strictly a numeric string with one dot
+        // and NO thousands-formatting dots (e.g. "30000.00" vs "30.000")
+        if (preg_match('/^\d+\.\d+$/', $value)) {
+             // If there is ONLY one dot and it's followed by NO digits, 
+             // it might be a user just typed a dot.
+             $parts = explode('.', $value);
+             if (strlen($parts[1]) === 3) {
+                  // Looks like Indonesian thousands (1.000, 20.000).
+                  return (float)str_replace('.', '', $value);
+             }
+             
+             // If it's not strictly 3 digits, it's a standard decimal (DB float).
+             return (float)$value;
+        }
+
+        // For all other cases (multiple dots, or strings with dots at "wrong" places),
+        // we treat ALL dots as thousands separators.
+        $clean = str_replace('.', '', $value);
+        $clean = str_replace(',', '.', $clean); // Handle comma as decimal if any
         
-        return $cleanDigits !== '' ? (float) $cleanDigits : 0;
+        return (float)$clean;
     }
 
     public static function updateItemSubtotal(Forms\Get $get, Forms\Set $set): void

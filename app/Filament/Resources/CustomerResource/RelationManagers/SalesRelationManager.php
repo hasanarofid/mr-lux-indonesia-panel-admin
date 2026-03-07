@@ -39,9 +39,11 @@ class SalesRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total (Rp)')
-                    ->money('IDR', locale: 'id')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.'))
                     ->sortable()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total Keseluruhan')->money('IDR', locale: 'id')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()
+                        ->label('Total Keseluruhan')
+                        ->formatStateUsing(fn ($state) => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.'))),
             ])
             ->filters([
                 //

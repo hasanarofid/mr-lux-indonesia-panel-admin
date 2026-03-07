@@ -108,7 +108,7 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('sales_sum_grand_total')
                     ->label('Saldo')
                     ->sum('sales', 'grand_total')
-                    ->money('IDR', locale: 'id')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('group')
                     ->label('Grup')

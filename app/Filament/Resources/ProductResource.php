@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -56,14 +57,18 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('price')
                             ->label('Harga per Unit')
                              ->required()
-                            ->numeric()
-                            ->default(0)
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                            ->stripCharacters('.')
+                            ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                            ->default(0),
                         Forms\Components\TextInput::make('price_per_carton')
                             ->label('Harga per Dus')
-                            ->numeric()
-                            ->default(0)
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                            ->stripCharacters('.')
+                            ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                            ->default(0),
                         Forms\Components\TextInput::make('stock')
                             ->label('Total Stok (Unit)')
                             ->required()
@@ -101,7 +106,7 @@ class ProductResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
-                    ->money('idr')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')

@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\DeliveryNoteResource\Pages;
-use App\Filament\Resources\DeliveryNoteResource\RelationManagers;
+use App\Filament\Resources\ManualDeliveryNoteResource\Pages;
 use App\Models\DeliveryNote;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,19 +10,18 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class DeliveryNoteResource extends Resource
+class ManualDeliveryNoteResource extends Resource
 {
     protected static ?string $model = DeliveryNote::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
-    protected static ?string $navigationLabel = 'Surat Jalan';
+    protected static ?string $navigationLabel = 'Surat Jalan Manual';
     protected static ?string $navigationGroup = 'Penjualan';
-    protected static ?int $navigationSort = 32;
-    protected static ?string $slug = 'surat-jalan';
-    protected static ?string $modelLabel = 'Surat Jalan';
-    protected static ?string $pluralModelLabel = 'Surat Jalan';
+    protected static ?int $navigationSort = 33;
+    protected static ?string $slug = 'surat-jalan-manual';
+    protected static ?string $modelLabel = 'Surat Jalan Manual';
+    protected static ?string $pluralModelLabel = 'Surat Jalan Manual';
 
     public static function form(Form $form): Form
     {
@@ -31,14 +29,16 @@ class DeliveryNoteResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Detail Pengiriman')
                     ->schema([
-                        Forms\Components\Select::make('sale_id')
-                            ->label('Nomor Invoice')
-                            ->relationship('sale', 'invoice_number')
+                        Forms\Components\Hidden::make('type')
+                            ->default('MANUAL'),
+                        Forms\Components\Select::make('customer_id')
+                            ->label('Customer')
+                            ->relationship('customer', 'name')
                             ->required()
                             ->searchable(),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
-                            ->default('SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
+                            ->default(fn () => 'SJM/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
                             ->required()
                             ->unique(ignoreRecord: true),
                         Forms\Components\DatePicker::make('date')
@@ -60,6 +60,39 @@ class DeliveryNoteResource extends Resource
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
                     ])->columns(2),
+
+                Forms\Components\Section::make('Item Barang')
+                    ->schema([
+                        Forms\Components\Repeater::make('items')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
+                                    ->relationship('product', 'name')
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                        if ($state) {
+                                            $product = \App\Models\Product::find($state);
+                                            $set('unit', $product?->uom ?? 'PCS');
+                                        }
+                                    })
+                                    ->columnSpan(4),
+                                Forms\Components\TextInput::make('unit')
+                                    ->label('Satuan')
+                                    ->required()
+                                    ->columnSpan(2),
+                                Forms\Components\TextInput::make('quantity')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->required()
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(8)
+                            ->defaultItems(1)
+                            ->reorderable(false),
+                    ]),
             ]);
     }
 
@@ -67,8 +100,8 @@ class DeliveryNoteResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sale.invoice_number')
-                    ->label('Nomor Invoice')
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Customer')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('number')
@@ -86,14 +119,6 @@ class DeliveryNoteResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -115,22 +140,17 @@ class DeliveryNoteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['sale']);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+        return parent::getEloquentQuery()
+            ->where('type', 'MANUAL')
+            ->with(['customer', 'items.product']);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDeliveryNotes::route('/'),
-            'create' => Pages\CreateDeliveryNote::route('/create'),
-            'edit' => Pages\EditDeliveryNote::route('/{record}/edit'),
+            'index' => Pages\ListManualDeliveryNotes::route('/'),
+            'create' => Pages\CreateManualDeliveryNote::route('/create'),
+            'edit' => Pages\EditManualDeliveryNote::route('/{record}/edit'),
         ];
     }
 }

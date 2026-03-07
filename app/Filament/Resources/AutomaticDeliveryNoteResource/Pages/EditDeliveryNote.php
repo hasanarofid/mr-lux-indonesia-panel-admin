@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\DeliveryNoteResource\Pages;
+namespace App\Filament\Resources\AutomaticDeliveryNoteResource\Pages;
 
-use App\Filament\Resources\DeliveryNoteResource;
+use App\Filament\Resources\AutomaticDeliveryNoteResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditDeliveryNote extends EditRecord
 {
-    protected static string $resource = DeliveryNoteResource::class;
+    protected static string $resource = AutomaticDeliveryNoteResource::class;
 
     protected function getRedirectUrl(): string
     {

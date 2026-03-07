@@ -122,9 +122,9 @@
         'title' => 'SURAT JALAN',
         'number' => $deliveryNote->number,
         'date' => $deliveryNote->date,
-        'ref' => $deliveryNote->sale->invoice_number,
-        'customerName' => $deliveryNote->sale->customer->name,
-        'customerAddress' => $deliveryNote->sale->customer->address ?? 'Alamat tidak tersedia'
+        'ref' => $deliveryNote->sale?->invoice_number ?? '-',
+        'customerName' => $deliveryNote->sale?->customer->name ?? $deliveryNote->customer?->name ?? 'Pelanggan Umum',
+        'customerAddress' => $deliveryNote->sale?->customer->address ?? $deliveryNote->customer?->address ?? 'Alamat tidak tersedia'
     ])
 
     <p class="intro-text">Mohon diterima barang-barang tersebut di bawah ini:</p>
@@ -139,15 +139,15 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($deliveryNote->sale->items as $index => $item)
+            @foreach($deliveryNote->items as $index => $item)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>
                     <div style="font-weight: 600;">{{ $item->product->name }}</div>
-                    <div style="font-size: 9px; color: #777;">Code: {{ $item->product->product_code }}</div>
+                    <div style="font-size: 9px; color: #777;">Code: {{ $item->product->sku }}</div>
                 </td>
                 <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
-                <td class="text-center">{{ $item->product->uom }}</td>
+                <td class="text-center">{{ $item->unit }}</td>
             </tr>
             @endforeach
         </tbody>

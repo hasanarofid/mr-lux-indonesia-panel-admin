@@ -11,6 +11,8 @@ class DeliveryNote extends Model
     use LogsActivity;
     protected $fillable = [
         'sale_id',
+        'customer_id',
+        'type',
         'number',
         'date',
         'driver_name',
@@ -21,6 +23,16 @@ class DeliveryNote extends Model
     public function sale()
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(DeliveryNoteItem::class);
     }
 
     public function getActivitylogOptions(): LogOptions

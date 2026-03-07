@@ -1,0 +1,215 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\AutomaticDeliveryNoteResource\Pages;
+use App\Models\DeliveryNote;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+class AutomaticDeliveryNoteResource extends Resource
+{
+    protected static ?string $model = DeliveryNote::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-truck';
+    protected static ?string $navigationLabel = 'Surat Jalan Otomatis';
+    protected static ?string $navigationGroup = 'Penjualan';
+    protected static ?int $navigationSort = 32;
+    protected static ?string $slug = 'surat-jalan-otomatis';
+    protected static ?string $modelLabel = 'Surat Jalan Otomatis';
+    protected static ?string $pluralModelLabel = 'Surat Jalan Otomatis';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Detail Pengiriman')
+                    ->schema([
+                        Forms\Components\Select::make('type')
+                            ->label('Tipe')
+                            ->options([
+                                'AUTOMATIC' => 'Otomatis (Dari Penjualan)',
+                                'MANUAL' => 'Manual (Tanpa Penjualan)',
+                            ])
+                            ->default('AUTOMATIC')
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state === 'MANUAL') {
+                                    $set('sale_id', null);
+                                } else {
+                                    $set('customer_id', null);
+                                }
+                            }),
+                        Forms\Components\Select::make('sale_id')
+                            ->label('Nomor Invoice')
+                            ->relationship('sale', 'invoice_number')
+                            ->required(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $sale = \App\Models\Sale::with('items.product')->find($state);
+                                    if ($sale) {
+                                        $set('customer_id', $sale->customer_id);
+                                        $items = $sale->items->map(fn ($item) => [
+                                            'product_id' => $item->product_id,
+                                            'unit' => $item->unit,
+                                            'quantity' => $item->quantity,
+                                        ])->toArray();
+                                        $set('items', $items);
+                                    }
+                                }
+                            }),
+                        Forms\Components\Select::make('customer_id')
+                            ->label('Customer')
+                            ->relationship('customer', 'name')
+                            ->required(fn (Forms\Get $get) => $get('type') === 'MANUAL')
+                            ->visible(fn (Forms\Get $get) => $get('type') !== 'AUTOMATIC' || $get('sale_id') !== null)
+                            ->disabled(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
+                            ->dehydrated()
+                            ->searchable(),
+                        Forms\Components\TextInput::make('number')
+                            ->label('Nomor SJ')
+                            ->default(fn () => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
+                            ->required()
+                            ->unique(ignoreRecord: true),
+                        Forms\Components\DatePicker::make('date')
+                            ->label('Tanggal')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'PENDING' => 'Pending',
+                                'SHIPPED' => 'Shipped',
+                                'DELIVERED' => 'Delivered',
+                            ])
+                            ->required()
+                            ->default('PENDING'),
+                        Forms\Components\TextInput::make('driver_name')
+                            ->label('Nama Sopir')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('vehicle_number')
+                            ->label('Nomor Kendaraan')
+                            ->maxLength(255),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Item Barang')
+                    ->schema([
+                        Forms\Components\Repeater::make('items')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
+                                    ->relationship('product', 'name')
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                        if ($state) {
+                                            $product = \App\Models\Product::find($state);
+                                            $set('unit', $product?->uom ?? 'PCS');
+                                        }
+                                    })
+                                    ->columnSpan(4),
+                                Forms\Components\TextInput::make('unit')
+                                    ->label('Satuan')
+                                    ->required()
+                                    ->columnSpan(2),
+                                Forms\Components\TextInput::make('quantity')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->required()
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(8)
+                            ->defaultItems(1)
+                            ->reorderable(false),
+                    ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'AUTOMATIC' => 'success',
+                        'MANUAL' => 'warning',
+                    }),
+                Tables\Columns\TextColumn::make('sale.invoice_number')
+                    ->label('Nomor Invoice')
+                    ->placeholder('N/A')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Customer')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('number')
+                    ->label('Nomor SJ')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('date')
+                    ->label('Tanggal')
+                    ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('driver_name')
+                    ->label('Nama Sopir')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('vehicle_number')
+                    ->label('Nomor Kendaraan')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\Action::make('print')
+                    ->label('Cetak SJ')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (DeliveryNote $record): string => route('delivery-notes.print', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('type', 'AUTOMATIC')
+            ->with(['sale', 'customer', 'items.product']);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListDeliveryNotes::route('/'),
+            'create' => Pages\CreateDeliveryNote::route('/create'),
+            'edit' => Pages\EditDeliveryNote::route('/{record}/edit'),
+        ];
+    }
+}
+

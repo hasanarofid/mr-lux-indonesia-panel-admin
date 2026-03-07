@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 0;
+            margin: 10mm;
         }
         
         body {
@@ -14,7 +14,7 @@
             font-size: 11px;
             color: #333;
             margin: 0;
-            padding: 40px;
+            padding: 0;
             background: #fff;
         }
 
@@ -58,8 +58,8 @@
             border-bottom: 1px solid #eee;
         }
 
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
 
         .summary-container {
             display: flex;
@@ -127,12 +127,26 @@
         <button onclick="window.print()">Cetak Dokumen</button>
     </div>
 
+    @php
+        $customerAddress = $sale->customer->address;
+        if (empty($customerAddress)) {
+            $addressParts = array_filter([
+                $sale->customer->billing_street,
+                $sale->customer->billing_city,
+                $sale->customer->billing_province,
+                $sale->customer->billing_postcode,
+                $sale->customer->billing_country,
+            ]);
+            $customerAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Alamat tidak tersedia';
+        }
+    @endphp
+
     @include('partials.kop', [
         'title' => 'FAKTUR PENJUALAN',
         'number' => $sale->invoice_number,
         'date' => $sale->date,
         'customerName' => $sale->customer->name,
-        'customerAddress' => $sale->customer->address ?? 'Alamat tidak tersedia'
+        'customerAddress' => $customerAddress
     ])
 
     <table class="content-table">

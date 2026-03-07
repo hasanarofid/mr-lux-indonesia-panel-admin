@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 0;
+            margin: 10mm;
         }
         
         body {
@@ -14,7 +14,7 @@
             font-size: 11px;
             color: #333;
             margin: 0;
-            padding: 40px;
+            padding: 0;
             background: #fff;
         }
 
@@ -64,8 +64,8 @@
             border-bottom: 1px solid #eee;
         }
 
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
 
         .delivery-info {
             margin-top: 20px;
@@ -118,13 +118,29 @@
         <button onclick="window.print()">Cetak Dokumen</button>
     </div>
 
+    @php
+        $customer = $deliveryNote->sale?->customer ?? $deliveryNote->customer;
+        $customerAddress = $customer?->address;
+        
+        if (empty($customerAddress) && $customer) {
+            $addressParts = array_filter([
+                $customer->billing_street,
+                $customer->billing_city,
+                $customer->billing_province,
+                $customer->billing_postcode,
+                $customer->billing_country,
+            ]);
+            $customerAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Alamat tidak tersedia';
+        }
+    @endphp
+
     @include('partials.kop', [
         'title' => 'SURAT JALAN',
         'number' => $deliveryNote->number,
         'date' => $deliveryNote->date,
         'ref' => $deliveryNote->sale?->invoice_number ?? '-',
-        'customerName' => $deliveryNote->sale?->customer->name ?? $deliveryNote->customer?->name ?? 'Pelanggan Umum',
-        'customerAddress' => $deliveryNote->sale?->customer->address ?? $deliveryNote->customer?->address ?? 'Alamat tidak tersedia'
+        'customerName' => $customer->name ?? 'Pelanggan Umum',
+        'customerAddress' => $customerAddress ?? 'Alamat tidak tersedia'
     ])
 
     <p class="intro-text">Mohon diterima barang-barang tersebut di bawah ini:</p>

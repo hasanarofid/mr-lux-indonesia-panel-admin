@@ -14,4 +14,26 @@ class CreateSale extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    protected function afterCreate(): void
+    {
+        $sale = $this->record;
+
+        $deliveryNote = \App\Models\DeliveryNote::create([
+            'sale_id' => $sale->id,
+            'customer_id' => $sale->customer_id,
+            'type' => 'AUTOMATIC',
+            'number' => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
+            'date' => $sale->date,
+            'status' => 'PENDING',
+        ]);
+
+        foreach ($sale->items as $item) {
+            $deliveryNote->items()->create([
+                'product_id' => $item->product_id,
+                'unit' => $item->unit ?? $item->product->uom,
+                'quantity' => $item->quantity,
+            ]);
+        }
+    }
 }

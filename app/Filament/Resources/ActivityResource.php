@@ -32,6 +32,7 @@ class ActivityResource extends BaseActivityResource
         if ($subject) {
             $name = match (true) {
                 isset($subject->invoice_number) => $subject->invoice_number,
+                isset($subject->number) => $subject->number,
                 isset($subject->name) => $subject->name,
                 isset($subject->title) => $subject->title,
                 isset($subject->label) => $subject->label,

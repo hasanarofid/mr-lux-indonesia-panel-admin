@@ -31,6 +31,26 @@ class ManualDeliveryNoteResource extends Resource
                     ->schema([
                         Forms\Components\Hidden::make('type')
                             ->default('MANUAL'),
+                        Forms\Components\Select::make('sale_id')
+                            ->label('Nomor Invoice (Opsional)')
+                            ->relationship('sale', 'invoice_number')
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $sale = \App\Models\Sale::with('items.product')->find($state);
+                                    if ($sale) {
+                                        $set('customer_id', $sale->customer_id);
+                                        $items = collect($sale->items)->map(fn ($item) => [
+                                            'product_id' => $item->product_id,
+                                            'unit' => $item->unit,
+                                            'quantity' => $item->quantity,
+                                        ])->toArray();
+                                        $set('items', $items);
+                                    }
+                                }
+                            }),
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
@@ -104,6 +124,11 @@ class ManualDeliveryNoteResource extends Resource
                     ->label('Customer')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('sale.invoice_number')
+                    ->label('Nomor Invoice')
+                    ->placeholder('N/A')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('number')
                     ->label('Nomor SJ')
                     ->searchable(),
@@ -118,6 +143,13 @@ class ManualDeliveryNoteResource extends Resource
                     ->label('Nomor Kendaraan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'PENDING' => 'danger',
+                        'SHIPPED' => 'warning', // filament uses warning for orange/yellow
+                        'DELIVERED' => 'success',
+                        default => 'gray',
+                    })
                     ->searchable(),
             ])
             ->filters([
@@ -142,7 +174,7 @@ class ManualDeliveryNoteResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('type', 'MANUAL')
-            ->with(['customer', 'items.product']);
+            ->with(['sale', 'customer', 'items.product']);
     }
 
     public static function getPages(): array

@@ -103,6 +103,8 @@ class AutomaticDeliveryNoteResource extends Resource
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
+                            ->disabled()
+                            ->helperText('Item surat jalan otomatis tidak bisa diedit secara langsung. Silakan edit Invoice terkait untuk mengubah barang.')
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
@@ -144,7 +146,9 @@ class AutomaticDeliveryNoteResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'AUTOMATIC' => 'success',
                         'MANUAL' => 'warning',
-                    }),
+                        default => 'primary',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('sale.invoice_number')
                     ->label('Nomor Invoice')
                     ->placeholder('N/A')
@@ -168,6 +172,13 @@ class AutomaticDeliveryNoteResource extends Resource
                     ->label('Nomor Kendaraan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'PENDING' => 'danger',
+                        'SHIPPED' => 'warning', // filament uses warning for orange/yellow
+                        'DELIVERED' => 'success',
+                        default => 'gray',
+                    })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

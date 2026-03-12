@@ -125,6 +125,8 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->formatStateUsing(fn ($state) => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.'))
+                    ->color(fn (Product $record): string => $record->price == 0 ? 'danger' : 'success')
+                    ->weight(fn (Product $record) => $record->price == 0 ? 'bold' : 'normal')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')

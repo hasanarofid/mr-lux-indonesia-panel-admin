@@ -13,8 +13,18 @@ class EditManualDeliveryNote extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->hidden(fn () => $this->record->status === 'DELIVERED'),
         ];
+    }
+
+    protected function getFormActions(): array
+    {
+        if ($this->record->status === 'DELIVERED') {
+            return [];
+        }
+
+        return parent::getFormActions();
     }
 
     protected function getRedirectUrl(): string

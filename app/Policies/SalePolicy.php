@@ -39,7 +39,7 @@ class SalePolicy
      */
     public function update(User $user, Sale $sale): bool
     {
-        return $user->can('update_sale');
+        return $user->can('update_sale') && $sale->status !== 'Lunas';
     }
 
     /**
@@ -47,7 +47,7 @@ class SalePolicy
      */
     public function delete(User $user, Sale $sale): bool
     {
-        return $user->can('delete_sale');
+        return $user->can('delete_sale') && $sale->status !== 'Lunas';
     }
 
     /**

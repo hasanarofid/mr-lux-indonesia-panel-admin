@@ -39,6 +39,9 @@ class DeliveryNotePolicy
      */
     public function update(User $user, DeliveryNote $deliveryNote): bool
     {
+        if ($deliveryNote->status === 'DELIVERED') {
+            return false;
+        }
         return $user->can('update_delivery::note');
     }
 
@@ -47,6 +50,9 @@ class DeliveryNotePolicy
      */
     public function delete(User $user, DeliveryNote $deliveryNote): bool
     {
+        if ($deliveryNote->status === 'DELIVERED') {
+            return false;
+        }
         return $user->can('delete_delivery::note');
     }
 

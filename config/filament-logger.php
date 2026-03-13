@@ -14,7 +14,9 @@ return [
         'color' => 'success',
 		
         'exclude' => [
-            //App\Filament\Resources\UserResource::class,
+            \App\Filament\Resources\SaleResource::class,
+            \App\Filament\Resources\AutomaticDeliveryNoteResource::class,
+            \App\Filament\Resources\ManualDeliveryNoteResource::class,
         ],
         'cluster' => null,
         'navigation_group' =>'User Management',

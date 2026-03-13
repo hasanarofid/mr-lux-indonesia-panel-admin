@@ -18,8 +18,18 @@ class EditSale extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->hidden(fn () => $this->record->status === 'Lunas'),
         ];
+    }
+
+    protected function getFormActions(): array
+    {
+        if ($this->record->status === 'Lunas') {
+            return [];
+        }
+
+        return parent::getFormActions();
     }
 
     protected function mutateFormDataBeforeSave(array $data): array

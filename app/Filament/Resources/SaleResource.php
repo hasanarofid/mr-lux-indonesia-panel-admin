@@ -9,6 +9,9 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Table;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +28,7 @@ class SaleResource extends Resource
     protected static ?string $slug = 'penjualan';
     protected static ?string $modelLabel = 'Penjualan';
     protected static ?string $pluralModelLabel = 'Penjualan';
+    protected static ?string $recordTitleAttribute = 'invoice_number';
 
     public static function form(Form $form): Form
     {
@@ -127,11 +131,8 @@ class SaleResource extends Resource
                             ])
                             ->default('Belum Lunas')
                             ->required(),
-                        Forms\Components\Toggle::make('is_ppn')
-                            ->label('Include PPN (11%)')
-                            ->live()
-                            ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set)),
-                    ])->columns(2),
+                    ])->columns(2)
+                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
 
                 Forms\Components\Section::make('Item')
                     ->schema([
@@ -255,7 +256,8 @@ class SaleResource extends Resource
                             ->extraAttributes([
                                 'onkeydown' => "if (event.key === 'Enter') { event.preventDefault(); return false; }",
                             ]),
-                    ]),
+                        ])
+                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
 
                 Forms\Components\Section::make('Ringkasan')
                     ->schema([
@@ -323,7 +325,8 @@ class SaleResource extends Resource
                             ->columnSpanFull(),
                         Forms\Components\Hidden::make('discount_item_total')
                             ->default(0),
-                    ])->columns(2),
+                    ])->columns(2)
+                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
             ]);
     }
 
@@ -481,7 +484,11 @@ class SaleResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->url(fn(Sale $record): string => route('sales.print', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make()
+                    ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
+                DeleteAction::make()
+                    ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

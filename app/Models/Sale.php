@@ -9,6 +9,20 @@ use Spatie\Activitylog\LogOptions;
 class Sale extends Model
 {
     use LogsActivity;
+    
+    protected static function booted()
+    {
+        static::deleting(function ($sale) {
+            $sale->items()->each(fn($item) => $item->delete());
+            $sale->deliveryNotes()->each(fn($dn) => $dn->delete());
+        });
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->invoice_number;
+    }
+
     protected $fillable = [
         'customer_id',
         'invoice_number',
@@ -59,6 +73,7 @@ class Sale extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
+            ->logOnly(['invoice_number', 'status', 'grand_total', 'name'])
             ->dontSubmitEmptyLogs();
     }
 }

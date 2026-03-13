@@ -43,7 +43,20 @@ class ActivityResource extends BaseActivityResource
             return "{$typeName} {$name}";
         }
 
-        return "{$typeName} #{$record->subject_id}";
+        // Fallback for deleted records: check properties (old or new attributes)
+        $props = $record->properties;
+        $attributes = $props->get('old') ?? $props->get('attributes') ?? [];
+        
+        $name = match (true) {
+            isset($attributes['invoice_number']) => $attributes['invoice_number'],
+            isset($attributes['number']) => $attributes['number'],
+            isset($attributes['name']) => $attributes['name'],
+            isset($attributes['label']) => $attributes['label'],
+            !empty($record->subject_id) => '#' . $record->subject_id,
+            default => 'Unknown',
+        };
+
+        return "{$typeName} {$name}";
     }
 
     public static function form(\Filament\Forms\Form $form): \Filament\Forms\Form
@@ -143,8 +156,6 @@ class ActivityResource extends BaseActivityResource
 
                 TextColumn::make('description')
                     ->label(__('filament-logger::filament-logger.resource.label.description'))
-                    ->toggleable()
-                    ->toggledHiddenByDefault()
                     ->wrap(),
 
                 TextColumn::make('subject_type')

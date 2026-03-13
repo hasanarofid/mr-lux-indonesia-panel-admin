@@ -8,6 +8,10 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -22,6 +26,7 @@ class ManualDeliveryNoteResource extends Resource
     protected static ?string $slug = 'surat-jalan-manual';
     protected static ?string $modelLabel = 'Surat Jalan Manual';
     protected static ?string $pluralModelLabel = 'Surat Jalan Manual';
+    protected static ?string $recordTitleAttribute = 'number';
 
     public static function form(Form $form): Form
     {
@@ -79,7 +84,8 @@ class ManualDeliveryNoteResource extends Resource
                         Forms\Components\TextInput::make('vehicle_number')
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
-                    ])->columns(2),
+                    ])->columns(2)
+                    ->disabled(fn (?DeliveryNote $record) => $record?->sale_id !== null),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([
@@ -99,8 +105,13 @@ class ManualDeliveryNoteResource extends Resource
                                         }
                                     })
                                     ->columnSpan(4),
-                                Forms\Components\TextInput::make('unit')
+                                Forms\Components\Select::make('unit')
                                     ->label('Satuan')
+                                    ->options([
+                                        'PCS' => 'PCS',
+                                        'Dus' => 'Dus',
+                                        'Set' => 'Set',
+                                    ])
                                     ->required()
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('quantity')
@@ -112,7 +123,8 @@ class ManualDeliveryNoteResource extends Resource
                             ->columns(8)
                             ->defaultItems(1)
                             ->reorderable(false),
-                    ]),
+                    ])
+                    ->disabled(fn (?DeliveryNote $record) => $record?->sale_id !== null),
             ]);
     }
 
@@ -156,12 +168,16 @@ class ManualDeliveryNoteResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('print')
+                Action::make('print')
                     ->label('Cetak SJ')
                     ->icon('heroicon-o-printer')
                     ->url(fn (DeliveryNote $record): string => route('delivery-notes.print', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make()
+                    ->hidden(fn (DeliveryNote $record) => $record->status === 'DELIVERED'),
+                DeleteAction::make()
+                    ->hidden(fn (DeliveryNote $record) => $record->status === 'DELIVERED'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

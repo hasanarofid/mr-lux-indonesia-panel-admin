@@ -29,27 +29,12 @@ class AutomaticDeliveryNoteResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Detail Pengiriman')
                     ->schema([
-                        Forms\Components\Select::make('type')
-                            ->label('Tipe')
-                            ->options([
-                                'AUTOMATIC' => 'Otomatis (Dari Penjualan)',
-                                'MANUAL' => 'Manual (Tanpa Penjualan)',
-                            ])
-                            ->default('AUTOMATIC')
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state === 'MANUAL') {
-                                    $set('sale_id', null);
-                                } else {
-                                    $set('customer_id', null);
-                                }
-                            }),
+                        Forms\Components\Hidden::make('type')
+                            ->default('AUTOMATIC'),
                         Forms\Components\Select::make('sale_id')
                             ->label('Nomor Invoice')
                             ->relationship('sale', 'invoice_number')
-                            ->required(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
+                            ->required()
                             ->searchable()
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
@@ -69,9 +54,8 @@ class AutomaticDeliveryNoteResource extends Resource
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
-                            ->required(fn (Forms\Get $get) => $get('type') === 'MANUAL')
-                            ->visible(fn (Forms\Get $get) => $get('type') !== 'AUTOMATIC' || $get('sale_id') !== null)
-                            ->disabled(fn (Forms\Get $get) => $get('type') === 'AUTOMATIC')
+                            ->visible(fn (Forms\Get $get) => $get('sale_id') !== null)
+                            ->disabled()
                             ->dehydrated()
                             ->searchable(),
                         Forms\Components\TextInput::make('number')

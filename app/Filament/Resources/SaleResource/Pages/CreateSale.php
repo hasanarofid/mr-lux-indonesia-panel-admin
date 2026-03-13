@@ -10,30 +10,51 @@ class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
 
+    public ?string $invoiceType = null;
+    public ?string $deliveryNoteId = null;
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $this->invoiceType = $data['invoice_type'] ?? 'NORMAL';
+        $this->deliveryNoteId = $data['delivery_note_id'] ?? null;
+
+        unset($data['invoice_type']);
+        unset($data['delivery_note_id']);
+
+        return $data;
     }
 
     protected function afterCreate(): void
     {
         $sale = $this->record;
 
-        $deliveryNote = \App\Models\DeliveryNote::create([
-            'sale_id' => $sale->id,
-            'customer_id' => $sale->customer_id,
-            'type' => 'AUTOMATIC',
-            'number' => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
-            'date' => $sale->date,
-            'status' => 'PENDING',
-        ]);
-
-        foreach ($sale->items as $item) {
-            $deliveryNote->items()->create([
-                'product_id' => $item->product_id,
-                'unit' => $item->unit ?? $item->product->uom,
-                'quantity' => $item->quantity,
+        if ($this->invoiceType === 'SJM' && $this->deliveryNoteId) {
+            $sjm = \App\Models\DeliveryNote::find($this->deliveryNoteId);
+            if ($sjm) {
+                $sjm->update(['sale_id' => $sale->id]);
+            }
+        } else {
+            $deliveryNote = \App\Models\DeliveryNote::create([
+                'sale_id' => $sale->id,
+                'customer_id' => $sale->customer_id,
+                'type' => 'AUTOMATIC',
+                'number' => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
+                'date' => $sale->date,
+                'status' => 'PENDING',
             ]);
+
+            foreach ($sale->items as $item) {
+                $deliveryNote->items()->create([
+                    'product_id' => $item->product_id,
+                    'unit' => $item->unit ?? ($item->product ? $item->product->uom : 'PCS'),
+                    'quantity' => $item->quantity,
+                ]);
+            }
         }
     }
 }

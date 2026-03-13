@@ -46,6 +46,65 @@ class SaleResource extends Resource
                                 }
                                 self::calculateTotals($get, $set);
                             }),
+                        Forms\Components\Select::make('invoice_type')
+                            ->label('Jenis Invoice')
+                            ->options([
+                                'NORMAL' => 'Normal',
+                                'SJM' => 'SJM',
+                            ])
+                            ->default('NORMAL')
+                            ->live()
+                            ->hiddenOn('edit'),
+                        Forms\Components\Select::make('delivery_note_id')
+                            ->label('Pilih SJM')
+                            ->options(function (): array {
+                                return \App\Models\DeliveryNote::where('type', 'MANUAL')
+                                    ->whereNull('sale_id')
+                                    ->pluck('number', 'id')->toArray();
+                            })
+                            ->searchable()
+                            ->visible(fn (Forms\Get $get) => $get('invoice_type') === 'SJM')
+                            ->required(fn (Forms\Get $get) => $get('invoice_type') === 'SJM')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                if ($state) {
+                                    $sjm = \App\Models\DeliveryNote::with('items.product')->find($state);
+                                    if ($sjm) {
+                                        $set('customer_id', $sjm->customer_id);
+                                        $customer = \App\Models\Customer::find($sjm->customer_id);
+                                        if ($customer) {
+                                            $set('is_ppn', $customer->group === 'PPN');
+                                        }
+
+                                        $items = collect($sjm->items)->map(function ($item) {
+                                            $product = $item->product;
+                                            $price = 0;
+                                            if ($product) {
+                                                $price = match($item->unit) {
+                                                    'Dus' => $product->price_per_carton,
+                                                    'Set' => $product->price_per_set,
+                                                    default => $product->price,
+                                                };
+                                            }
+                                            $qty = $item->quantity;
+                                            $subtotal = round($qty * $price);
+
+                                            return [
+                                                'product_id' => $item->product_id,
+                                                'unit' => $item->unit,
+                                                'quantity' => number_format((float)$qty, 0, ',', '.'),
+                                                'price' => number_format((float)$price, 0, ',', '.'),
+                                                'discount_percent' => 0,
+                                                'discount_item' => '0',
+                                                'subtotal' => number_format((float)$subtotal, 0, ',', '.'),
+                                            ];
+                                        })->toArray();
+                                        $set('items', $items);
+                                        self::calculateTotals($get, $set);
+                                    }
+                                }
+                            })
+                            ->hiddenOn('edit'),
                         Forms\Components\TextInput::make('invoice_number')
                             ->label('Nomor Invoice')
                             ->default('INV/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))

@@ -55,10 +55,12 @@ class ProductResource extends Resource
                             ->default('PCS')
                             ->live(),
                         Forms\Components\TextInput::make('isi')
-                            ->label('Isi per Dus')
+                            ->label(fn (Forms\Get $get) => 'Isi per ' . ($get('uom') ?? 'PCS') . ' / Dus')
                             ->numeric()
                             ->default(1)
-                            ->required(),
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateCartonPrice($get, $set)),
                         Forms\Components\TextInput::make('isi_set')
                             ->label('Units per Set (Isi)')
                             ->numeric()
@@ -67,10 +69,10 @@ class ProductResource extends Resource
                             ->hidden(fn (Forms\Get $get) => in_array($get('uom'), ['PCS', 'SET', 'KG'])),
                         Forms\Components\TextInput::make('price')
                             ->label(fn (Forms\Get $get) => match ($get('uom')) {
-                                'PCS' => 'Harga per Pc',
+                                'PCS' => 'Harga per PCS',
                                 'SET' => 'Harga per Set',
                                 'KG' => 'Harga per Kg',
-                                default => 'Harga per Pc',
+                                default => 'Harga per PCS',
                             })
                              ->required()
                             ->prefix('Rp')
@@ -79,6 +81,7 @@ class ProductResource extends Resource
                             ->live(onBlur: true)
                             ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                             ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
+                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::calculateCartonPrice($get, $set))
                             ->default(0),
                         Forms\Components\TextInput::make('price_per_carton')
                             ->label('Harga per Dus')
@@ -86,6 +89,7 @@ class ProductResource extends Resource
                             ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                             ->stripCharacters('.')
                             ->live(onBlur: true)
+                            ->readOnly()
                             ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                             ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
                             ->default(0),
@@ -100,7 +104,7 @@ class ProductResource extends Resource
                             ->default(0)
                             ->hidden(fn (Forms\Get $get) => in_array($get('uom'), ['PCS', 'SET', 'KG'])),
                         Forms\Components\TextInput::make('stock')
-                            ->label('Total Stok (Unit)')
+                            ->label(fn (Forms\Get $get) => 'Total Stok (' . ($get('uom') ?? 'PCS') . ')')
                             ->required()
                             ->default(0)
                             ->disabled()
@@ -111,6 +115,16 @@ class ProductResource extends Resource
                             ->columnSpanFull(),
                     ])->columns(2),
             ]);
+    }
+    
+    public static function calculateCartonPrice(Forms\Get $get, Forms\Set $set): void
+    {
+        $isi = (float) ($get('isi') ?? 0);
+        $price = SaleResource::parseNumber($get('price') ?? 0);
+        
+        $pricePerCarton = round($isi * $price);
+        
+        $set('price_per_carton', number_format($pricePerCarton, 0, ',', '.'));
     }
 
     public static function table(Table $table): Table

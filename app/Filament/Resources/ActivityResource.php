@@ -34,11 +34,23 @@ class ActivityResource extends BaseActivityResource
                 isset($subject->invoice_number) => $subject->invoice_number,
                 isset($subject->number) => $subject->number,
                 isset($subject->name) => $subject->name,
+                isset($subject->supplier_name) => $subject->supplier_name,
                 isset($subject->title) => $subject->title,
                 isset($subject->label) => $subject->label,
                 method_exists($subject, 'getName') => $subject->getName(),
                 default => '#' . $record->subject_id,
             };
+
+            if ($record->subject_type === \App\Models\StockEntry::class) {
+                $typeName = 'Mutasi';
+                $name = "{$subject->type} " . \Carbon\Carbon::parse($subject->date)->format('d/m/Y');
+            }
+
+            if ($record->subject_type === \App\Models\Purchase::class) {
+                $typeName = 'Pembelian';
+                $date = isset($subject->date) ? \Carbon\Carbon::parse($subject->date)->format('d/m/Y') : '-';
+                $name = "{$subject->supplier_name} {$date}";
+            }
 
             if ($record->subject_type === \App\Models\DeliveryNote::class) {
                 $typeName = $subject->type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
@@ -55,10 +67,25 @@ class ActivityResource extends BaseActivityResource
             isset($attributes['invoice_number']) => $attributes['invoice_number'],
             isset($attributes['number']) => $attributes['number'],
             isset($attributes['name']) => $attributes['name'],
+            isset($attributes['supplier_name']) => $attributes['supplier_name'],
             isset($attributes['label']) => $attributes['label'],
             !empty($record->subject_id) => '#' . $record->subject_id,
             default => 'Unknown',
         };
+
+        if ($record->subject_type === \App\Models\StockEntry::class) {
+            $typeName = 'Mutasi';
+            $type = $attributes['type'] ?? '';
+            $date = isset($attributes['date']) ? \Carbon\Carbon::parse($attributes['date'])->format('d/m/Y') : '';
+            $name = "{$type} {$date}";
+        }
+
+        if ($record->subject_type === \App\Models\Purchase::class) {
+            $typeName = 'Pembelian';
+            $supplier = $attributes['supplier_name'] ?? '';
+            $date = isset($attributes['date']) ? \Carbon\Carbon::parse($attributes['date'])->format('d/m/Y') : '';
+            $name = "{$supplier} {$date}";
+        }
 
         if ($record->subject_type === \App\Models\DeliveryNote::class) {
             $type = $attributes['type'] ?? null;

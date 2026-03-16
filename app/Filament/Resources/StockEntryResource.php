@@ -70,10 +70,16 @@ class StockEntryResource extends Resource
                                         }
                                     }),
                                 Forms\Components\TextInput::make('isi')
-                                    ->label('Isi per Pcs/Set/Kg Dus')
+                                    ->label(fn (Forms\Get $get) => 'Isi per ' . (\App\Models\Product::find($get('product_id'))?->uom ?? 'PCS') . ' / Dus')
                                     ->numeric()
                                     ->disabled()
-                                    ->dehydrated(false),
+                                    ->dehydrated(false)
+                                    ->afterStateHydrated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        $product = \App\Models\Product::find($get('product_id'));
+                                        if ($product) {
+                                            $set('isi', $product->isi ?? 1);
+                                        }
+                                    }),
                                 Forms\Components\TextInput::make('quantity_carton')
                                     ->label('Jumlah Dus')
                                     ->required()
@@ -85,7 +91,7 @@ class StockEntryResource extends Resource
                                     ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity')
-                                    ->label('Total Pcs / Set / Kg')
+                                    ->label(fn (Forms\Get $get) => 'Total ' . (\App\Models\Product::find($get('product_id'))?->uom ?? 'Unit'))
                                     ->required()
                                     ->readOnly()
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))

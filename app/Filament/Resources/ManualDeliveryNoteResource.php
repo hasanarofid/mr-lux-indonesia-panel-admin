@@ -36,23 +36,37 @@ class ManualDeliveryNoteResource extends Resource
                     ->schema([
                         Forms\Components\Hidden::make('type')
                             ->default('MANUAL'),
-                        Forms\Components\Select::make('sale_id')
+                        Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sale', 'invoice_number')
+                            ->relationship('sales', 'invoice_number')
+                            ->multiple()
                             ->searchable()
-                            ->nullable()
+                            ->preload()
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                 if ($state) {
-                                    $sale = \App\Models\Sale::with('items.product')->find($state);
-                                    if ($sale) {
-                                        $set('customer_id', $sale->customer_id);
-                                        $items = collect($sale->items)->map(fn ($item) => [
-                                            'product_id' => $item->product_id,
-                                            'unit' => $item->unit,
-                                            'quantity' => $item->quantity,
-                                        ])->toArray();
-                                        $set('items', $items);
+                                    $sales = \App\Models\Sale::with('items.product')->whereIn('id', $state)->get();
+                                    if ($sales->isNotEmpty()) {
+                                        // Set customer from the first sale if not already set
+                                        $set('customer_id', $sales->first()->customer_id);
+
+                                        // Aggregate items from all selected sales
+                                        $aggregatedItems = [];
+                                        foreach ($sales as $sale) {
+                                            foreach ($sale->items as $item) {
+                                                $key = $item->product_id . '_' . $item->unit;
+                                                if (isset($aggregatedItems[$key])) {
+                                                    $aggregatedItems[$key]['quantity'] += $item->quantity;
+                                                } else {
+                                                    $aggregatedItems[$key] = [
+                                                        'product_id' => $item->product_id,
+                                                        'unit' => $item->unit,
+                                                        'quantity' => $item->quantity,
+                                                    ];
+                                                }
+                                            }
+                                        }
+                                        $set('items', array_values($aggregatedItems));
                                     }
                                 }
                             }),
@@ -86,7 +100,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
                     ])->columns(2)
-                    ->disabled(fn (?DeliveryNote $record) => $record?->sale_id !== null),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->sales()->exists()),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([
@@ -110,8 +124,9 @@ class ManualDeliveryNoteResource extends Resource
                                     ->label('Satuan')
                                     ->options([
                                         'PCS' => 'PCS',
-                                        'Dus' => 'Dus',
-                                        'Set' => 'Set',
+                                        'DUS' => 'DUS',
+                                        'SET' => 'SET',
+                                        'KG' => 'KG',
                                     ])
                                     ->required()
                                     ->columnSpan(2),
@@ -125,7 +140,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->defaultItems(1)
                             ->reorderable(false),
                     ])
-                    ->disabled(fn (?DeliveryNote $record) => $record?->sale_id !== null),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->sales()->exists()),
             ]);
     }
 
@@ -137,9 +152,11 @@ class ManualDeliveryNoteResource extends Resource
                     ->label('Customer')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('sale.invoice_number')
+                Tables\Columns\TextColumn::make('sales.invoice_number')
                     ->label('Nomor Invoice')
                     ->placeholder('N/A')
+                    ->listWithLineBreaks()
+                    ->bulleted()
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('number')
@@ -191,7 +208,7 @@ class ManualDeliveryNoteResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('type', 'MANUAL')
-            ->with(['sale', 'customer', 'items.product']);
+            ->with(['sales', 'customer', 'items.product']);
     }
 
     public static function getPages(): array

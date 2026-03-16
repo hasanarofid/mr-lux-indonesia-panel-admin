@@ -116,7 +116,6 @@ class SaleResource extends Resource
                             ->unique(ignoreRecord: true),
                         Forms\Components\DatePicker::make('date')
                             ->label('Tanggal')
-                            ->default(now())
                             ->required()
                             ->native(false),
                         Forms\Components\DatePicker::make('due_date')
@@ -158,10 +157,13 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($state);
                                         if ($product) {
-                                            $unit = $get('unit') ?? 'PCS';
+                                            $unit = $product->uom ?? 'PCS';
+                                            $set('unit', $unit);
+                                            
                                             $price = match($unit) {
-                                                'Dus' => $product->price_per_carton,
-                                                'Set' => $product->price_per_set,
+                                                'DUS' => $product->price_per_carton,
+                                                'SET' => ($product->uom === 'SET') ? $product->price : $product->price_per_set,
+                                                'KG' => $product->price,
                                                 default => $product->price,
                                             };
                                             $set('price', number_format($price, 0, ',', '.'));
@@ -173,8 +175,9 @@ class SaleResource extends Resource
                                     ->label('Satuan')
                                     ->options([
                                         'PCS' => 'PCS',
-                                        'Dus' => 'Dus',
-                                        'Set' => 'Set',
+                                        'DUS' => 'DUS',
+                                        'SET' => 'SET',
+                                        'KG' => 'KG',
                                     ])
                                     ->default('PCS')
                                     ->required()
@@ -183,8 +186,9 @@ class SaleResource extends Resource
                                         $product = \App\Models\Product::find($get('product_id'));
                                         if ($product) {
                                             $price = match($state) {
-                                                'Dus' => $product->price_per_carton,
-                                                'Set' => $product->price_per_set,
+                                                'DUS' => $product->price_per_carton,
+                                                'SET' => ($product->uom === 'SET') ? $product->price : $product->price_per_set,
+                                                'KG' => $product->price,
                                                 default => $product->price,
                                             };
                                             $set('price', number_format($price, 0, ',', '.'));
@@ -221,7 +225,10 @@ class SaleResource extends Resource
                                     ->extraInputAttributes(['onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46'])
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $price = self::parseNumber($get('price') ?? 0);
-                                        $discountNominal = round($price * (self::parseNumber($state) / 100));
+                                        $qty = self::parseNumber($get('quantity') ?? 1);
+                                        $lineSubtotal = $price * $qty;
+                                        
+                                        $discountNominal = round($lineSubtotal * (self::parseNumber($state) / 100));
                                         $set('discount_item', self::formatMoney($discountNominal));
                                         self::updateItemSubtotal($get, $set);
                                     }),
@@ -236,9 +243,12 @@ class SaleResource extends Resource
                                     ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $price = self::parseNumber($get('price') ?? 0);
+                                        $qty = self::parseNumber($get('quantity') ?? 1);
+                                        $lineSubtotal = $price * $qty;
+                                        
                                         $nominal = self::parseNumber($state ?? 0);
-                                        if ($price > 0) {
-                                            $set('discount_percent', round(($nominal / $price) * 100, 2));
+                                        if ($lineSubtotal > 0) {
+                                            $set('discount_percent', round(($nominal / $lineSubtotal) * 100, 2));
                                         }
                                         $set('discount_item', self::formatMoney($nominal));
                                         self::updateItemSubtotal($get, $set);
@@ -376,9 +386,9 @@ class SaleResource extends Resource
     {
         $quantity = self::parseNumber($get('quantity') ?? 0);
         $price = self::parseNumber($get('price') ?? 0);
-        $discount = self::parseNumber($get('discount_item') ?? 0);
+        $discountLine = self::parseNumber($get('discount_item') ?? 0);
 
-        $subtotal = round($quantity * ($price - $discount));
+        $subtotal = round(($quantity * $price) - $discountLine);
         $set('subtotal', self::formatMoney($subtotal));
         
         // Explicitly trigger summary calculation at parent level

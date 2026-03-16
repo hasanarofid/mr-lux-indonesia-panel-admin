@@ -38,6 +38,11 @@ class DeliveryNote extends Model
         return $this->belongsTo(Sale::class);
     }
 
+    public function sales()
+    {
+        return $this->belongsToMany(Sale::class, 'delivery_note_sale');
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

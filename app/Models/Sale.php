@@ -68,6 +68,11 @@ class Sale extends Model
         return $this->hasMany(DeliveryNote::class);
     }
 
+    public function manualDeliveryNotes()
+    {
+        return $this->belongsToMany(DeliveryNote::class, 'delivery_note_sale');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

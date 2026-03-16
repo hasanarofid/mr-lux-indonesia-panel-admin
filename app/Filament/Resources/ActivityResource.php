@@ -12,12 +12,32 @@ class ActivityResource extends BaseActivityResource
 {
     public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['causer', 'subject']);
+        return parent::getGlobalSearchEloquentQuery()->with([
+            'causer',
+            'subject' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Sale::class => ['items.product'],
+                    \App\Models\StockEntry::class => ['items.product'],
+                    \App\Models\Purchase::class => ['items.product'],
+                    \App\Models\DeliveryNote::class => ['items.product'],
+                ]);
+            }
+        ]);
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->with(['causer', 'subject']);
+        return parent::getEloquentQuery()->with([
+            'causer',
+            'subject' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Sale::class => ['items.product'],
+                    \App\Models\StockEntry::class => ['items.product'],
+                    \App\Models\Purchase::class => ['items.product'],
+                    \App\Models\DeliveryNote::class => ['items.product'],
+                ]);
+            }
+        ]);
     }
 
     public static function getSubjectLabel(?Model $record): string
@@ -56,7 +76,9 @@ class ActivityResource extends BaseActivityResource
                 $typeName = $subject->type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
             }
 
-            return "{$typeName} {$name}";
+            $summary = static::getItemSummary($subject);
+
+            return "{$typeName} {$name}{$summary}";
         }
 
         // Fallback for deleted records: check properties (old or new attributes)
@@ -93,6 +115,41 @@ class ActivityResource extends BaseActivityResource
         }
 
         return "{$typeName} {$name}";
+    }
+
+    protected static function getItemSummary($subject): string
+    {
+        if (!$subject || !method_exists($subject, 'items')) {
+            return '';
+        }
+
+        try {
+            $items = $subject->items;
+            if (!$items || $items->isEmpty()) {
+                return '';
+            }
+
+            $productNames = $items->map(function($item) {
+                return $item->product ? $item->product->name : null;
+            })->filter()->unique()->values();
+
+            if ($productNames->isEmpty()) {
+                $count = $items->count();
+                return " ({$count} item)";
+            }
+
+            $displayNames = $productNames->take(2);
+            $summary = $displayNames->implode(', ');
+
+            if ($productNames->count() > 2) {
+                $count = $productNames->count() - 2;
+                $summary .= " +{$count}";
+            }
+
+            return " ({$summary})";
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
     public static function form(\Filament\Forms\Form $form): \Filament\Forms\Form

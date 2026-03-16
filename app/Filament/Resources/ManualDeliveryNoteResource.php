@@ -59,8 +59,9 @@ class ManualDeliveryNoteResource extends Resource
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} - {$record->billing_city} ({$record->code})")
                             ->required()
-                            ->searchable(),
+                            ->searchable(['name', 'billing_city', 'code']),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
                             ->default(fn () => 'SJM/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))

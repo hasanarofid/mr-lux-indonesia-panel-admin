@@ -70,7 +70,7 @@ class StockEntryResource extends Resource
                                         }
                                     }),
                                 Forms\Components\TextInput::make('isi')
-                                    ->label('Isi/Dus')
+                                    ->label('Isi per Pcs/Set/Kg Dus')
                                     ->numeric()
                                     ->disabled()
                                     ->dehydrated(false),
@@ -84,22 +84,13 @@ class StockEntryResource extends Resource
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
-                                Forms\Components\TextInput::make('quantity_unit')
-                                    ->label('Eceran (Pcs)')
-                                    ->required()
-                                    ->default(0)
-                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
-                                    ->stripCharacters('.')
-                                    ->live(onBlur: true)
-                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
-                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
-                                    ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity')
-                                    ->label('Total Pcs')
+                                    ->label('Total Pcs / Set / Kg')
                                     ->required()
                                     ->readOnly()
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
-                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state)),
+                                    ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
+                                    ->extraAttributes(['class' => 'bg-gray-100']),
                             ])
                             ->columns(5)
                             ->itemLabel(fn (array $state): ?string => (\App\Models\Product::find($state['product_id'])?->name ?? 'Item') . ' (' . ($state['quantity'] ?? 0) . ' pcs)'),
@@ -155,10 +146,9 @@ class StockEntryResource extends Resource
         $product = \App\Models\Product::find($productId);
         $isi = $product ? ($product->isi ?? 1) : 1;
         
-        $cartons = floatval($get('quantity_carton') ?? 0);
-        $units = floatval($get('quantity_unit') ?? 0);
+        $cartons = floatval(SaleResource::parseNumber($get('quantity_carton') ?? 0));
         
-        $totalQuantity = ($cartons * $isi) + $units;
+        $totalQuantity = ($cartons * $isi);
         
         $set('quantity', $totalQuantity);
     }

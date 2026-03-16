@@ -40,6 +40,10 @@ class ActivityResource extends BaseActivityResource
                 default => '#' . $record->subject_id,
             };
 
+            if ($record->subject_type === \App\Models\DeliveryNote::class) {
+                $typeName = $subject->type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
+            }
+
             return "{$typeName} {$name}";
         }
 
@@ -55,6 +59,11 @@ class ActivityResource extends BaseActivityResource
             !empty($record->subject_id) => '#' . $record->subject_id,
             default => 'Unknown',
         };
+
+        if ($record->subject_type === \App\Models\DeliveryNote::class) {
+            $type = $attributes['type'] ?? null;
+            $typeName = $type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
+        }
 
         return "{$typeName} {$name}";
     }

@@ -9,6 +9,14 @@ use Spatie\Activitylog\LogOptions;
 class Purchase extends Model
 {
     use LogsActivity;
+
+    protected static function booted()
+    {
+        static::deleting(function ($purchase) {
+            $purchase->items()->each(fn($item) => $item->delete());
+        });
+    }
+
     protected $fillable = [
         'supplier_name',
         'date',

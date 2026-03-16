@@ -166,7 +166,6 @@
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>
                     <div style="font-weight: 600;">{{ $item->product->name }}</div>
-                    <div style="font-size: 9px; color: #777;">Code: {{ $item->product->sku }}</div>
                 </td>
                 <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
                 <td class="text-center">{{ $item->unit ?? $item->product->uom }}</td>

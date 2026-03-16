@@ -9,6 +9,14 @@ use Spatie\Activitylog\LogOptions;
 class StockEntry extends Model
 {
     use LogsActivity;
+
+    protected static function booted()
+    {
+        static::deleting(function ($stockEntry) {
+            $stockEntry->items()->each(fn($item) => $item->delete());
+        });
+    }
+
     protected $fillable = [
         'type',
         'date',

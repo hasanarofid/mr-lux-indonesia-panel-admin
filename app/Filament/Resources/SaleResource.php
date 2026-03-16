@@ -39,9 +39,9 @@ class SaleResource extends Resource
                         Forms\Components\Select::make('customer_id')
                             ->label('Pelanggan')
                             ->relationship('customer', 'name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} - {$record->billing_city} ({$record->code})")
                             ->required()
-                            ->searchable()
-                            ->searchable()
+                            ->searchable(['name', 'billing_city', 'code'])
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $customer = \App\Models\Customer::find($state);

@@ -44,13 +44,18 @@ class ProductResource extends Resource
                             ->label('SKU/Kode')
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('uom')
+                        Forms\Components\Select::make('uom')
                             ->label('Satuan')
-                            ->datalist(fn () => \App\Models\Product::query()->whereNotNull('uom')->distinct()->pluck('uom')->toArray())
+                            ->options([
+                                'PCS' => 'PCS',
+                                'SET' => 'SET',
+                                'KG' => 'KG',
+                            ])
                             ->required()
-                            ->default('PCS'),
+                            ->default('PCS')
+                            ->live(),
                         Forms\Components\TextInput::make('isi')
-                            ->label('Units per Carton (Isi)')
+                            ->label('Isi per Dus')
                             ->numeric()
                             ->default(1)
                             ->required(),
@@ -58,9 +63,15 @@ class ProductResource extends Resource
                             ->label('Units per Set (Isi)')
                             ->numeric()
                             ->default(1)
-                            ->required(),
+                            ->required()
+                            ->hidden(fn (Forms\Get $get) => in_array($get('uom'), ['PCS', 'SET', 'KG'])),
                         Forms\Components\TextInput::make('price')
-                            ->label('Harga per Unit')
+                            ->label(fn (Forms\Get $get) => match ($get('uom')) {
+                                'PCS' => 'Harga per Pc',
+                                'SET' => 'Harga per Set',
+                                'KG' => 'Harga per Kg',
+                                default => 'Harga per Pc',
+                            })
                              ->required()
                             ->prefix('Rp')
                             ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
@@ -86,7 +97,8 @@ class ProductResource extends Resource
                             ->live(onBlur: true)
                             ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                             ->dehydrateStateUsing(fn ($state) => SaleResource::parseNumber($state))
-                            ->default(0),
+                            ->default(0)
+                            ->hidden(fn (Forms\Get $get) => in_array($get('uom'), ['PCS', 'SET', 'KG'])),
                         Forms\Components\TextInput::make('stock')
                             ->label('Total Stok (Unit)')
                             ->required()
@@ -128,6 +140,10 @@ class ProductResource extends Resource
                     ->color(fn (Product $record): string => $record->price == 0 ? 'danger' : 'success')
                     ->weight(fn (Product $record) => $record->price == 0 ? 'bold' : 'normal')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('dus')
+                    ->label('Dus')
+                    ->getStateUsing(fn (Product $record) => $record->isi > 0 ? floor($record->stock / $record->isi) : 0)
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')
                     ->numeric()

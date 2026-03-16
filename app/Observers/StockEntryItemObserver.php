@@ -26,14 +26,39 @@ class StockEntryItemObserver
      */
     public function updated(StockEntryItem $stockEntryItem): void
     {
-        $product = $stockEntryItem->product;
         $type = $stockEntryItem->stockEntry->type;
-        $difference = $stockEntryItem->quantity - $stockEntryItem->getOriginal('quantity');
 
-        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-            $product->increment('stock', $difference);
-        } elseif ($type === 'KELUAR') {
-            $product->decrement('stock', $difference);
+        if ($stockEntryItem->isDirty('product_id')) {
+            // Revert old product
+            $oldProduct = \App\Models\Product::withTrashed()->find($stockEntryItem->getOriginal('product_id'));
+            if ($oldProduct) {
+                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                    $oldProduct->decrement('stock', $stockEntryItem->getOriginal('quantity'));
+                } elseif ($type === 'KELUAR') {
+                    $oldProduct->increment('stock', $stockEntryItem->getOriginal('quantity'));
+                }
+            }
+
+            // Apply to new product
+            $newProduct = $stockEntryItem->product;
+            if ($newProduct) {
+                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                    $newProduct->increment('stock', $stockEntryItem->quantity);
+                } elseif ($type === 'KELUAR') {
+                    $newProduct->decrement('stock', $stockEntryItem->quantity);
+                }
+            }
+        } else {
+            $product = $stockEntryItem->product;
+            $difference = $stockEntryItem->quantity - $stockEntryItem->getOriginal('quantity');
+
+            if ($product) {
+                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                    $product->increment('stock', $difference);
+                } elseif ($type === 'KELUAR') {
+                    $product->decrement('stock', $difference);
+                }
+            }
         }
     }
 
@@ -42,13 +67,15 @@ class StockEntryItemObserver
      */
     public function deleted(StockEntryItem $stockEntryItem): void
     {
-        $product = $stockEntryItem->product;
+        $product = \App\Models\Product::withTrashed()->find($stockEntryItem->product_id);
         $type = $stockEntryItem->stockEntry->type;
 
-        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-            $product->decrement('stock', $stockEntryItem->quantity);
-        } elseif ($type === 'KELUAR') {
-            $product->increment('stock', $stockEntryItem->quantity);
+        if ($product) {
+            if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                $product->decrement('stock', $stockEntryItem->quantity);
+            } elseif ($type === 'KELUAR') {
+                $product->increment('stock', $stockEntryItem->quantity);
+            }
         }
     }
 

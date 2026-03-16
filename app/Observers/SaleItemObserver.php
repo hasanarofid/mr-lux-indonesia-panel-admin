@@ -20,9 +20,25 @@ class SaleItemObserver
      */
     public function updated(SaleItem $saleItem): void
     {
-        $difference = $saleItem->quantity - $saleItem->getOriginal('quantity');
-        $product = $saleItem->product;
-        $product->decrement('stock', $difference);
+        if ($saleItem->isDirty('product_id')) {
+            // Return stock to old product
+            $oldProduct = \App\Models\Product::withTrashed()->find($saleItem->getOriginal('product_id'));
+            if ($oldProduct) {
+                $oldProduct->increment('stock', $saleItem->getOriginal('quantity'));
+            }
+
+            // Deduct from new product
+            $newProduct = $saleItem->product;
+            if ($newProduct) {
+                $newProduct->decrement('stock', $saleItem->quantity);
+            }
+        } else {
+            $difference = $saleItem->quantity - $saleItem->getOriginal('quantity');
+            $product = $saleItem->product;
+            if ($product) {
+                $product->decrement('stock', $difference);
+            }
+        }
     }
 
     /**
@@ -30,8 +46,11 @@ class SaleItemObserver
      */
     public function deleted(SaleItem $saleItem): void
     {
-        $product = $saleItem->product;
-        $product->increment('stock', $saleItem->quantity);
+        // Use withTrashed in relationship or manually find
+        $product = \App\Models\Product::withTrashed()->find($saleItem->product_id);
+        if ($product) {
+            $product->increment('stock', $saleItem->quantity);
+        }
     }
 
     /**

@@ -9,6 +9,14 @@ use Spatie\Activitylog\LogOptions;
 class DeliveryNote extends Model
 {
     use LogsActivity;
+
+    protected static function booted()
+    {
+        static::deleting(function ($deliveryNote) {
+            $deliveryNote->items()->each(fn($item) => $item->delete());
+        });
+    }
+
     protected $fillable = [
         'sale_id',
         'customer_id',
@@ -45,7 +53,7 @@ class DeliveryNote extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->logOnly(['number', 'status', 'name'])
+            ->logOnly(['number', 'status', 'name', 'type'])
             ->dontSubmitEmptyLogs();
     }
 }

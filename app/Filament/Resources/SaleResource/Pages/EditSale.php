@@ -35,7 +35,6 @@ class EditSale extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         unset($data['invoice_type']);
-        unset($data['delivery_note_id']);
 
         return $data;
     }

@@ -11,7 +11,6 @@ class CreateSale extends CreateRecord
     protected static string $resource = SaleResource::class;
 
     public ?string $invoiceType = null;
-    public ?string $deliveryNoteId = null;
 
     protected function getRedirectUrl(): string
     {
@@ -21,10 +20,6 @@ class CreateSale extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $this->invoiceType = $data['invoice_type'] ?? 'NORMAL';
-        $this->deliveryNoteId = $data['delivery_note_id'] ?? null;
-
-        unset($data['invoice_type']);
-        unset($data['delivery_note_id']);
 
         return $data;
     }
@@ -33,12 +28,7 @@ class CreateSale extends CreateRecord
     {
         $sale = $this->record;
 
-        if ($this->invoiceType === 'SJM' && $this->deliveryNoteId) {
-            $sjm = \App\Models\DeliveryNote::find($this->deliveryNoteId);
-            if ($sjm) {
-                $sjm->update(['sale_id' => $sale->id]);
-            }
-        } else {
+        if ($this->invoiceType === 'NORMAL') {
             $deliveryNote = \App\Models\DeliveryNote::create([
                 'sale_id' => $sale->id,
                 'customer_id' => $sale->customer_id,

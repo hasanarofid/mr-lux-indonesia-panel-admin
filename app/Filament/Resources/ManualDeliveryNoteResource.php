@@ -13,6 +13,7 @@ use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 
 class ManualDeliveryNoteResource extends Resource
@@ -38,7 +39,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->default('MANUAL'),
                         Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sales', 'invoice_number')
+                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->where('invoice_type', 'SJM'))
                             ->multiple()
                             ->searchable()
                             ->preload()
@@ -54,14 +55,15 @@ class ManualDeliveryNoteResource extends Resource
                                         $aggregatedItems = [];
                                         foreach ($sales as $sale) {
                                             foreach ($sale->items as $item) {
-                                                $key = $item->product_id . '_' . $item->unit;
+                                                $unit = strtoupper($item->unit);
+                                                $key = $item->product_id . '_' . $unit;
                                                 if (isset($aggregatedItems[$key])) {
-                                                    $aggregatedItems[$key]['quantity'] += $item->quantity;
+                                                    $aggregatedItems[$key]['quantity'] += (float)$item->quantity;
                                                 } else {
                                                     $aggregatedItems[$key] = [
                                                         'product_id' => $item->product_id,
-                                                        'unit' => $item->unit,
-                                                        'quantity' => $item->quantity,
+                                                        'unit' => $unit,
+                                                        'quantity' => (float)$item->quantity,
                                                     ];
                                                 }
                                             }
@@ -100,7 +102,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
                     ])->columns(2)
-                    ->disabled(fn (?DeliveryNote $record) => $record && $record->sales()->exists()),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->status === 'DELIVERED'),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([
@@ -116,7 +118,7 @@ class ManualDeliveryNoteResource extends Resource
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                         if ($state) {
                                             $product = \App\Models\Product::find($state);
-                                            $set('unit', $product?->uom ?? 'PCS');
+                                            $set('unit', strtoupper($product?->uom ?? 'PCS'));
                                         }
                                     })
                                     ->columnSpan(4),
@@ -129,18 +131,21 @@ class ManualDeliveryNoteResource extends Resource
                                         'KG' => 'KG',
                                     ])
                                     ->required()
+                                    ->readOnly()
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
-                                    ->numeric()
                                     ->required()
+                                    ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
+                                    ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
                                     ->columnSpan(2),
                             ])
                             ->columns(8)
                             ->defaultItems(1)
                             ->reorderable(false),
                     ])
-                    ->disabled(fn (?DeliveryNote $record) => $record && $record->sales()->exists()),
+                    ->disabled(fn (?DeliveryNote $record) => $record && ($record->status === 'DELIVERED' || $record->sales()->exists())),
             ]);
     }
 

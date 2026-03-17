@@ -145,19 +145,27 @@
 
     <p class="intro-text">Mohon diterima barang-barang tersebut di bawah ini:</p>
 
-    <table class="content-table">
+    <table class="content-table" style="font-size: 9px;">
         <thead>
             <tr>
-                <th width="5%" class="text-center">No</th>
-                <th width="65%">Deskripsi Produk</th>
-                <th width="15%" class="text-center">Kuantitas</th>
-                <th width="15%" class="text-center">UOM</th>
+                <th width="3%" class="text-center">No</th>
+                <th width="15%">No. Invoice</th>
+                <th width="20%">Customer</th>
+                <th width="42%">Deskripsi Produk</th>
+                <th width="10%" class="text-center">QTY</th>
+                <th width="10%" class="text-center">UOM</th>
             </tr>
         </thead>
         <tbody>
             @foreach($deliveryNote->items as $index => $item)
+            @php
+                $itemSale = $item->sale;
+                $itemCustomer = $itemSale?->customer ?? $deliveryNote->customer;
+            @endphp
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $itemSale?->invoice_number ?? '-' }}</td>
+                <td>{{ $itemCustomer?->name ?? 'N/A' }}</td>
                 <td>
                     <div style="font-weight: 600;">{{ $item->product->name }}</div>
                 </td>

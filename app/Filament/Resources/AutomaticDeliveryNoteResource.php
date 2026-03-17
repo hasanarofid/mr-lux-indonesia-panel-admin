@@ -42,6 +42,7 @@ class AutomaticDeliveryNoteResource extends Resource
                             ->required()
                             ->searchable()
                             ->live()
+                            ->disabled(fn (?DeliveryNote $record) => $record && $record->exists)
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                 if ($state) {
                                     $sale = \App\Models\Sale::with('items.product')->find($state);
@@ -68,11 +69,13 @@ class AutomaticDeliveryNoteResource extends Resource
                             ->label('Nomor SJ')
                             ->default(fn () => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
                             ->required()
+                            ->readOnly(fn (?DeliveryNote $record) => $record && $record->exists)
                             ->unique(ignoreRecord: true),
                         Forms\Components\DatePicker::make('date')
                             ->label('Tanggal')
                             ->default(now())
-                            ->required(),
+                            ->required()
+                            ->readOnly(fn (?DeliveryNote $record) => $record && $record->exists),
                         Forms\Components\Select::make('status')
                             ->options([
                                 'PENDING' => 'Pending',
@@ -88,7 +91,7 @@ class AutomaticDeliveryNoteResource extends Resource
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
                     ])->columns(2)
-                    ->disabled(fn (string $context) => $context === 'edit'),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([

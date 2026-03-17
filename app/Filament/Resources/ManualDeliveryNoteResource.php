@@ -39,36 +39,37 @@ class ManualDeliveryNoteResource extends Resource
                             ->default('MANUAL'),
                         Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->where('invoice_type', 'SJM'))
+                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->whereIn('invoice_type', ['NORMAL', 'SJM']))
                             ->multiple()
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state) {
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                if (is_array($state) && count($state) > 0) {
                                     $sales = \App\Models\Sale::with('items.product')->whereIn('id', $state)->get();
                                     if ($sales->isNotEmpty()) {
-                                        // Set customer from the first sale if not already set
+                                        // Set customer from the first sale automatically
                                         $set('customer_id', $sales->first()->customer_id);
 
-                                        // Aggregate items from all selected sales
-                                        $aggregatedItems = [];
+                                        // Collect items from all selected sales without full aggregation 
+                                        // if we want to show invoice number per line.
+                                        // However, the user might still want to see aggregated items but with 
+                                        // a reference to the sales. 
+                                        // Let's go with one line per item/invoice for transparency.
+                                        $items = [];
                                         foreach ($sales as $sale) {
                                             foreach ($sale->items as $item) {
-                                                $unit = strtoupper($item->unit);
-                                                $key = $item->product_id . '_' . $unit;
-                                                if (isset($aggregatedItems[$key])) {
-                                                    $aggregatedItems[$key]['quantity'] += (float)$item->quantity;
-                                                } else {
-                                                    $aggregatedItems[$key] = [
-                                                        'product_id' => $item->product_id,
-                                                        'unit' => $unit,
-                                                        'quantity' => (float)$item->quantity,
-                                                    ];
-                                                }
+                                                $items[] = [
+                                                    'sale_id' => $sale->id,
+                                                    'invoice_number' => $sale->invoice_number,
+                                                    'customer_name' => $sale->customer?->name,
+                                                    'product_id' => $item->product_id,
+                                                    'unit' => strtoupper($item->unit),
+                                                    'quantity' => (float)$item->quantity,
+                                                ];
                                             }
                                         }
-                                        $set('items', array_values($aggregatedItems));
+                                        $set('items', $items);
                                     }
                                 }
                             }),
@@ -102,13 +103,26 @@ class ManualDeliveryNoteResource extends Resource
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
                     ])->columns(2)
-                    ->disabled(fn (?DeliveryNote $record) => $record && $record->status === 'DELIVERED'),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
+                                Forms\Components\Hidden::make('sale_id'),
+                                Forms\Components\TextInput::make('invoice_number')
+                                    ->label('Invoice')
+                                    ->afterStateHydrated(fn($state, $set, $record) => $set('invoice_number', $record?->sale?->invoice_number))
+                                    ->readOnly()
+                                    ->dehydrated(false)
+                                    ->columnSpan(['md' => 2]),
+                                Forms\Components\TextInput::make('customer_name')
+                                    ->label('Customer')
+                                    ->afterStateHydrated(fn($state, $set, $record) => $set('customer_name', $record?->sale?->customer?->name))
+                                    ->readOnly()
+                                    ->dehydrated(false)
+                                    ->columnSpan(['md' => 2]),
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
@@ -121,31 +135,26 @@ class ManualDeliveryNoteResource extends Resource
                                             $set('unit', strtoupper($product?->uom ?? 'PCS'));
                                         }
                                     })
-                                    ->columnSpan(4),
-                                Forms\Components\Select::make('unit')
+                                    ->columnSpan(['md' => 4]),
+                                Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
-                                    ->options([
-                                        'PCS' => 'PCS',
-                                        'DUS' => 'DUS',
-                                        'SET' => 'SET',
-                                        'KG' => 'KG',
-                                    ])
                                     ->required()
                                     ->readOnly()
-                                    ->columnSpan(2),
+                                    ->dehydrated()
+                                    ->columnSpan(['md' => 1]),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->required()
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
-                                    ->columnSpan(2),
+                                    ->columnSpan(['md' => 1]),
                             ])
-                            ->columns(8)
+                            ->columns(12)
                             ->defaultItems(1)
                             ->reorderable(false),
                     ])
-                    ->disabled(fn (?DeliveryNote $record) => $record && ($record->status === 'DELIVERED' || $record->sales()->exists())),
+                    ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
             ]);
     }
 
@@ -213,7 +222,7 @@ class ManualDeliveryNoteResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('type', 'MANUAL')
-            ->with(['sales', 'customer', 'items.product']);
+            ->with(['sales', 'customer', 'items.product', 'items.sale.customer']);
     }
 
     public static function getPages(): array

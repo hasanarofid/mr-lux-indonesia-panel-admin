@@ -8,6 +8,7 @@ class DeliveryNoteItem extends Model
 {
     protected $fillable = [
         'delivery_note_id',
+        'sale_id',
         'product_id',
         'unit',
         'quantity',
@@ -16,6 +17,11 @@ class DeliveryNoteItem extends Model
     public function deliveryNote()
     {
         return $this->belongsTo(DeliveryNote::class);
+    }
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
     }
 
     public function product()

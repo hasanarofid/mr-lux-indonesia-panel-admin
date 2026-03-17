@@ -58,7 +58,8 @@ class SaleResource extends Resource
                             ])
                             ->default('NORMAL')
                             ->live()
-                            ->hiddenOn('edit'),
+                            ->disabledOn('edit')
+                            ->dehydrated(),
 
                         Forms\Components\TextInput::make('invoice_number')
                             ->label('Nomor Invoice')
@@ -434,6 +435,15 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('customer.category')
                     ->label('Kategori Pelanggan')
                     ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('invoice_type')
+                    ->label('Tipe')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'NORMAL' => 'success',
+                        'SJM' => 'warning',
+                        default => 'gray',
+                    })
                     ->sortable(),
             ])
             ->filters([

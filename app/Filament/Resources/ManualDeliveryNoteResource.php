@@ -39,7 +39,12 @@ class ManualDeliveryNoteResource extends Resource
                             ->default('MANUAL'),
                         Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->whereIn('invoice_type', ['NORMAL', 'SJM']))
+                            ->relationship('sales', 'invoice_number', function (Builder $query, ?DeliveryNote $record) {
+                                return $query->where('invoice_type', 'SJM')
+                                    ->when($record, function ($query) use ($record) {
+                                        return $query->orWhereIn('sales.id', $record->sales->pluck('id')->toArray());
+                                    });
+                            })
                             ->multiple()
                             ->searchable()
                             ->preload()

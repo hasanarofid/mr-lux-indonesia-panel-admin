@@ -415,8 +415,8 @@ class SaleResource extends Resource
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'Lunas' => 'success',
-                        'Belum Lunas' => 'warning',
-                        'Dibatalkan' => 'danger',
+                        'Belum Lunas' => 'danger',
+                        'Dibatalkan' => 'gray',
                         default => 'gray',
                     })
                     ->searchable(),
@@ -440,8 +440,8 @@ class SaleResource extends Resource
                     ->label('Tipe')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'NORMAL' => 'success',
-                        'SJM' => 'warning',
+                        'NORMAL' => 'info',
+                        'SJM' => 'gray',
                         default => 'gray',
                     })
                     ->sortable(),

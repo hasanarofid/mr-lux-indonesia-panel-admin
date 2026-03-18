@@ -48,6 +48,11 @@ class DeliveryNote extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function customers()
+    {
+        return $this->belongsToMany(Customer::class, 'delivery_note_customer');
+    }
+
     public function items()
     {
         return $this->hasMany(DeliveryNoteItem::class);

@@ -39,12 +39,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->default('MANUAL'),
                         Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sales', 'invoice_number', function (Builder $query, ?DeliveryNote $record) {
-                                return $query->where('invoice_type', 'SJM')
-                                    ->when($record, function ($query) use ($record) {
-                                        return $query->orWhereIn('sales.id', $record->sales->pluck('id')->toArray());
-                                    });
-                            })
+                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->where('invoice_type', 'SJM'))
                             ->multiple()
                             ->searchable()
                             ->preload()
@@ -53,8 +48,9 @@ class ManualDeliveryNoteResource extends Resource
                                 if (is_array($state) && count($state) > 0) {
                                     $sales = \App\Models\Sale::with('items.product')->whereIn('id', $state)->get();
                                     if ($sales->isNotEmpty()) {
-                                        // Set customer from the first sale automatically
-                                        $set('customer_id', $sales->first()->customer_id);
+                                        // Set unique customers from selected sales
+                                        $customerIds = $sales->pluck('customer_id')->unique()->toArray();
+                                        $set('customers', $customerIds);
 
                                         // Collect items from all selected sales without full aggregation 
                                         // if we want to show invoice number per line.
@@ -78,12 +74,14 @@ class ManualDeliveryNoteResource extends Resource
                                     }
                                 }
                             }),
-                        Forms\Components\Select::make('customer_id')
+                        Forms\Components\Select::make('customers')
                             ->label('Customer')
-                            ->relationship('customer', 'name')
+                            ->relationship('customers', 'name')
                             ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} - {$record->billing_city} ({$record->code})")
+                            ->searchable(['name', 'billing_city', 'code'])
+                            ->multiple()
                             ->required()
-                            ->searchable(['name', 'billing_city', 'code']),
+                            ->dehydrated(),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
                             ->default(fn () => 'SJM/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
@@ -167,8 +165,10 @@ class ManualDeliveryNoteResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('customer.name')
+                Tables\Columns\TextColumn::make('customers.name')
                     ->label('Customer')
+                    ->listWithLineBreaks()
+                    ->bulleted()
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sales.invoice_number')
@@ -227,7 +227,7 @@ class ManualDeliveryNoteResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('type', 'MANUAL')
-            ->with(['sales', 'customer', 'items.product', 'items.sale.customer']);
+            ->with(['sales', 'customers', 'items.product', 'items.sale.customer']);
     }
 
     public static function getPages(): array

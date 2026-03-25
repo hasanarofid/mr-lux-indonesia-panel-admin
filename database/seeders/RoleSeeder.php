@@ -27,32 +27,30 @@ class RoleSeeder extends Seeder
             // Customers
             'view_any_customer', 'view_customer', 'create_customer', 'update_customer',
             // Sales
-            'view_any_sale', 'view_sale', 'create_sale', 'update_sale',
+            'view_any_sale', 'view_sale', 'create_sale', 'update_sale', 'delete_sale', 'delete_any_sale',
             // Purchases
             'view_any_purchase', 'view_purchase', 'create_purchase', 'update_purchase',
             // Delivery Notes
             'view_any_delivery_note', 'view_delivery_note', 'create_delivery_note', 'update_delivery_note',
-            // Stock Entries
-            'view_any_stock_entry', 'view_stock_entry', 'create_stock_entry', 'update_stock_entry',
+            // Stock Entries (Mutasi) - Using policy format stock::entry
+            'view_any_stock::entry', 'view_stock::entry', 'create_stock::entry', 'update_stock::entry', 'delete_stock::entry', 'delete_any_stock::entry',
         ];
 
         foreach ($permissions as $permission) {
             \Spatie\Permission\Models\Permission::updateOrCreate(['name' => $permission]);
         }
 
-        // Assign Permissions to Gudang
+        // Assign Permissions to Gudang (Hanya Mutasi)
         $gudang->syncPermissions([
-            'view_any_product', 'view_product', 'create_product', 'update_product',
-            'view_any_purchase', 'view_purchase', 'create_purchase', 'update_purchase',
-            'view_any_delivery_note', 'view_delivery_note', 'create_delivery_note', 'update_delivery_note',
-            'view_any_stock_entry', 'view_stock_entry', 'create_stock_entry', 'update_stock_entry',
+            'view_any_product', 'view_product', // Required to see products for mutation
+            'view_any_stock::entry', 'view_stock::entry', 'create_stock::entry', 'update_stock::entry', 'delete_stock::entry',
         ]);
 
-        // Assign Permissions to Kasir
+        // Assign Permissions to Kasir (Menu Penjualan Saja)
         $kasir->syncPermissions([
-            'view_any_sale', 'view_sale', 'create_sale', 'update_sale',
-            'view_any_customer', 'view_customer', 'create_customer', 'update_customer',
-            'view_any_product', 'view_product',
+            'view_any_product', 'view_product', // Required for sales
+            'view_any_customer', 'view_customer', // Required for sales
+            'view_any_sale', 'view_sale', 'create_sale', 'update_sale', 'delete_sale',
         ]);
     }
 }

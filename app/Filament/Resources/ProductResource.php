@@ -40,6 +40,10 @@ class ProductResource extends Resource
                             ->label('Kategori')
                             ->datalist(fn () => \App\Models\Product::query()->whereNotNull('category')->distinct()->pluck('category')->toArray())
                             ->required(),
+                        Forms\Components\Toggle::make('is_track_stock')
+                            ->label('Lacak Stok')
+                            ->default(true)
+                            ->live(),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU/Kode')
                             ->unique(ignoreRecord: true)
@@ -137,6 +141,10 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('category')
                     ->label('Kategori')
                     ->searchable()
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_track_stock')
+                    ->label('Lacak Stok')
+                    ->boolean()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')

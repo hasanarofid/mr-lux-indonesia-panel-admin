@@ -55,6 +55,19 @@ class AutomaticDeliveryNoteResource extends Resource
                                     $sale = \App\Models\Sale::with('items.product')->find($state);
                                     if ($sale) {
                                         $set('customer_id', $sale->customer_id);
+                                        
+                                        // Pre-fill address
+                                        if ($sale->customer) {
+                                            $addressParts = array_filter([
+                                                $sale->customer->billing_street,
+                                                $sale->customer->billing_city,
+                                                $sale->customer->billing_province,
+                                                $sale->customer->billing_postcode,
+                                                $sale->customer->billing_country,
+                                            ]);
+                                            $set('address', implode(', ', $addressParts));
+                                        }
+
                                         $items = $sale->items->map(fn ($item) => [
                                             'product_id' => $item->product_id,
                                             'unit' => $item->unit,
@@ -72,6 +85,12 @@ class AutomaticDeliveryNoteResource extends Resource
                             ->disabled()
                             ->dehydrated()
                             ->searchable(['name', 'billing_city', 'code']),
+                        Forms\Components\Textarea::make('address')
+                            ->label('Alamat')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->dehydrated()
+                            ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
                             ->default(fn () => 'SJ/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))

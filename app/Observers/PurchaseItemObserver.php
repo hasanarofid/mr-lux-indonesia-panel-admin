@@ -12,7 +12,9 @@ class PurchaseItemObserver
     public function created(PurchaseItem $purchaseItem): void
     {
         $product = $purchaseItem->product;
-        $product->increment('stock', $purchaseItem->quantity);
+        if ($product && $product->is_track_stock) {
+            $product->increment('stock', (float) $purchaseItem->quantity);
+        }
     }
 
     /**
@@ -20,9 +22,11 @@ class PurchaseItemObserver
      */
     public function updated(PurchaseItem $purchaseItem): void
     {
-        $difference = $purchaseItem->quantity - $purchaseItem->getOriginal('quantity');
         $product = $purchaseItem->product;
-        $product->increment('stock', $difference);
+        if ($product && $product->is_track_stock) {
+            $difference = (float) $purchaseItem->quantity - (float) $purchaseItem->getOriginal('quantity');
+            $product->increment('stock', $difference);
+        }
     }
 
     /**
@@ -31,7 +35,9 @@ class PurchaseItemObserver
     public function deleted(PurchaseItem $purchaseItem): void
     {
         $product = $purchaseItem->product;
-        $product->decrement('stock', $purchaseItem->quantity);
+        if ($product && $product->is_track_stock) {
+            $product->decrement('stock', (float) $purchaseItem->quantity);
+        }
     }
 
     /**

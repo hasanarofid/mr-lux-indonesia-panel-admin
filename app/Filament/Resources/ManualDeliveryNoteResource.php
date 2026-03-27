@@ -54,6 +54,21 @@ class ManualDeliveryNoteResource extends Resource
                                         $customerIds = $sales->pluck('customer_id')->unique()->toArray();
                                         $set('customers', $customerIds);
 
+                                        // Pre-fill address from first customer
+                                        if (count($customerIds) > 0) {
+                                            $firstCustomer = \App\Models\Customer::find($customerIds[0]);
+                                            if ($firstCustomer) {
+                                                $addressParts = array_filter([
+                                                    $firstCustomer->billing_street,
+                                                    $firstCustomer->billing_city,
+                                                    $firstCustomer->billing_province,
+                                                    $firstCustomer->billing_postcode,
+                                                    $firstCustomer->billing_country,
+                                                ]);
+                                                $set('address', implode(', ', $addressParts));
+                                            }
+                                        }
+
                                         // Collect items from all selected sales without full aggregation 
                                         // if we want to show invoice number per line.
                                         // However, the user might still want to see aggregated items but with 
@@ -83,7 +98,29 @@ class ManualDeliveryNoteResource extends Resource
                             ->searchable(['name', 'billing_city', 'code'])
                             ->multiple()
                             ->required()
-                            ->dehydrated(),
+                            ->dehydrated()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if (is_array($state) && count($state) > 0) {
+                                    $customer = \App\Models\Customer::find($state[0]);
+                                    if ($customer) {
+                                        $addressParts = array_filter([
+                                            $customer->billing_street,
+                                            $customer->billing_city,
+                                            $customer->billing_province,
+                                            $customer->billing_postcode,
+                                            $customer->billing_country,
+                                        ]);
+                                        $set('address', implode(', ', $addressParts));
+                                    }
+                                }
+                            }),
+                        Forms\Components\Textarea::make('address')
+                            ->label('Alamat')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->dehydrated()
+                            ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
                         Forms\Components\TextInput::make('number')
                             ->label('Nomor SJ')
                             ->default(fn () => 'SJM/' . date('Ymd') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))

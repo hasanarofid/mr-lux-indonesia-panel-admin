@@ -18,7 +18,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin']);
+        return $user->hasAnyRole(['super_admin', 'admin_gudang']);
     }
 
     /**
@@ -49,8 +49,12 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function update(User $user): bool
+    public function update(User $user, User $model): bool
     {
+        if ($model->hasAnyRole(['super_admin']) && !$user->hasAnyRole(['super_admin'])) {
+            return false;
+        }
+
         return $user->can('update_user');
     }
 
@@ -77,7 +81,7 @@ class UserPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_user') && $user->hasAnyRole(['super_admin']);
+        return $user->can('delete_any_user') && $user->hasAnyRole(['super_admin', 'admin_gudang']);
     }
 
     /**

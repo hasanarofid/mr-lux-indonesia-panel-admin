@@ -13,6 +13,7 @@ class Product extends Model
     protected $fillable = [
         'name',
         'category',
+        'is_track_stock',
         'sku',
         'uom',
         'isi',

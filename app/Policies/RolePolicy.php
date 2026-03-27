@@ -39,6 +39,10 @@ class RolePolicy
      */
     public function update(User $user, Role $role): bool
     {
+        if ($role->name === 'super_admin' && !$user->hasAnyRole(['super_admin'])) {
+            return false;
+        }
+
         return $user->can('update_role');
     }
 
@@ -47,6 +51,10 @@ class RolePolicy
      */
     public function delete(User $user, Role $role): bool
     {
+        if ($role->name === 'super_admin') {
+            return false;
+        }
+
         return $user->can('delete_role');
     }
 

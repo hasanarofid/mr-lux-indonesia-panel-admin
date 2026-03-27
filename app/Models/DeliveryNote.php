@@ -29,6 +29,7 @@ class DeliveryNote extends Model
         'driver_name',
         'vehicle_number',
         'status',
+        'address',
     ];
 
     public function getNameAttribute()

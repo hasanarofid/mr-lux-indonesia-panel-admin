@@ -118,8 +118,10 @@ class RoleResource extends Resource implements HasShieldPermissions
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->hidden(fn ($record) => $record->name === 'super_admin' && !Filament::auth()->user()->hasRole('super_admin')),
+                Tables\Actions\DeleteAction::make()
+                    ->hidden(fn ($record) => $record->name === 'super_admin'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

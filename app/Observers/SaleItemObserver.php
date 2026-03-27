@@ -12,7 +12,9 @@ class SaleItemObserver
     public function created(SaleItem $saleItem): void
     {
         $product = $saleItem->product;
-        $product->decrement('stock', $saleItem->quantity);
+        if ($product && $product->is_track_stock) {
+            $product->decrement('stock', (float) $saleItem->quantity);
+        }
     }
 
     /**
@@ -23,19 +25,19 @@ class SaleItemObserver
         if ($saleItem->isDirty('product_id')) {
             // Return stock to old product
             $oldProduct = \App\Models\Product::withTrashed()->find($saleItem->getOriginal('product_id'));
-            if ($oldProduct) {
-                $oldProduct->increment('stock', $saleItem->getOriginal('quantity'));
+            if ($oldProduct && $oldProduct->is_track_stock) {
+                $oldProduct->increment('stock', (float) $saleItem->getOriginal('quantity'));
             }
 
             // Deduct from new product
             $newProduct = $saleItem->product;
-            if ($newProduct) {
-                $newProduct->decrement('stock', $saleItem->quantity);
+            if ($newProduct && $newProduct->is_track_stock) {
+                $newProduct->decrement('stock', (float) $saleItem->quantity);
             }
         } else {
-            $difference = $saleItem->quantity - $saleItem->getOriginal('quantity');
             $product = $saleItem->product;
-            if ($product) {
+            if ($product && $product->is_track_stock) {
+                $difference = (float) $saleItem->quantity - (float) $saleItem->getOriginal('quantity');
                 $product->decrement('stock', $difference);
             }
         }
@@ -48,8 +50,8 @@ class SaleItemObserver
     {
         // Use withTrashed in relationship or manually find
         $product = \App\Models\Product::withTrashed()->find($saleItem->product_id);
-        if ($product) {
-            $product->increment('stock', $saleItem->quantity);
+        if ($product && $product->is_track_stock) {
+            $product->increment('stock', (float) $saleItem->quantity);
         }
     }
 

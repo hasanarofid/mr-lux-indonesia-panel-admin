@@ -12,12 +12,16 @@ class StockEntryItemObserver
     public function created(StockEntryItem $stockEntryItem): void
     {
         $product = $stockEntryItem->product;
+        if (!$product || !$product->is_track_stock) {
+            return;
+        }
+
         $type = $stockEntryItem->stockEntry->type;
 
         if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-            $product->increment('stock', $stockEntryItem->quantity);
+            $product->increment('stock', (float) $stockEntryItem->quantity);
         } elseif ($type === 'KELUAR') {
-            $product->decrement('stock', $stockEntryItem->quantity);
+            $product->decrement('stock', (float) $stockEntryItem->quantity);
         }
     }
 
@@ -31,28 +35,27 @@ class StockEntryItemObserver
         if ($stockEntryItem->isDirty('product_id')) {
             // Revert old product
             $oldProduct = \App\Models\Product::withTrashed()->find($stockEntryItem->getOriginal('product_id'));
-            if ($oldProduct) {
+            if ($oldProduct && $oldProduct->is_track_stock) {
                 if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-                    $oldProduct->decrement('stock', $stockEntryItem->getOriginal('quantity'));
+                    $oldProduct->decrement('stock', (float) $stockEntryItem->getOriginal('quantity'));
                 } elseif ($type === 'KELUAR') {
-                    $oldProduct->increment('stock', $stockEntryItem->getOriginal('quantity'));
+                    $oldProduct->increment('stock', (float) $stockEntryItem->getOriginal('quantity'));
                 }
             }
 
             // Apply to new product
             $newProduct = $stockEntryItem->product;
-            if ($newProduct) {
+            if ($newProduct && $newProduct->is_track_stock) {
                 if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-                    $newProduct->increment('stock', $stockEntryItem->quantity);
+                    $newProduct->increment('stock', (float) $stockEntryItem->quantity);
                 } elseif ($type === 'KELUAR') {
-                    $newProduct->decrement('stock', $stockEntryItem->quantity);
+                    $newProduct->decrement('stock', (float) $stockEntryItem->quantity);
                 }
             }
         } else {
             $product = $stockEntryItem->product;
-            $difference = $stockEntryItem->quantity - $stockEntryItem->getOriginal('quantity');
-
-            if ($product) {
+            if ($product && $product->is_track_stock) {
+                $difference = (float) $stockEntryItem->quantity - (float) $stockEntryItem->getOriginal('quantity');
                 if (in_array($type, ['MASUK', 'PRODUCTION'])) {
                     $product->increment('stock', $difference);
                 } elseif ($type === 'KELUAR') {
@@ -68,13 +71,12 @@ class StockEntryItemObserver
     public function deleted(StockEntryItem $stockEntryItem): void
     {
         $product = \App\Models\Product::withTrashed()->find($stockEntryItem->product_id);
-        $type = $stockEntryItem->stockEntry->type;
-
-        if ($product) {
+        if ($product && $product->is_track_stock) {
+            $type = $stockEntryItem->stockEntry->type;
             if (in_array($type, ['MASUK', 'PRODUCTION'])) {
-                $product->decrement('stock', $stockEntryItem->quantity);
+                $product->decrement('stock', (float) $stockEntryItem->quantity);
             } elseif ($type === 'KELUAR') {
-                $product->increment('stock', $stockEntryItem->quantity);
+                $product->increment('stock', (float) $stockEntryItem->quantity);
             }
         }
     }

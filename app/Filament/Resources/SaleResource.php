@@ -92,15 +92,42 @@ class SaleResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
-                                    ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0))
-                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name} (Stok: " . number_format($record->stock, 0, ',', '.') . ")")
+                                    ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0)->orWhere('is_track_stock', false))
+                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}" . ($record->is_track_stock ? " (Stok: " . number_format($record->stock, 0, ',', '.') . ")" : " (Non-Stok)"))
                                     ->searchable(['name', 'sku'])
                                     ->required()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nama Produk')
+                                            ->required(),
+                                        Forms\Components\TextInput::make('category')
+                                            ->label('Kategori')
+                                            ->default('Manual')
+                                            ->datalist(fn () => \App\Models\Product::query()->whereNotNull('category')->distinct()->pluck('category')->toArray())
+                                            ->required(),
+                                        Forms\Components\Toggle::make('is_track_stock')
+                                            ->label('Lacak Stok')
+                                            ->default(false),
+                                        Forms\Components\Select::make('uom')
+                                            ->label('Satuan')
+                                            ->options([
+                                                'PCS' => 'PCS',
+                                                'SET' => 'SET',
+                                                'KG' => 'KG',
+                                            ])
+                                            ->default('PCS')
+                                            ->required(),
+                                        Forms\Components\TextInput::make('price')
+                                            ->label('Harga Jual')
+                                            ->prefix('Rp')
+                                            ->numeric()
+                                            ->required(),
+                                    ])
                                     ->rules([
                                         fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) {
                                             if (!$value) return;
                                             $product = \App\Models\Product::find($value);
-                                            if (!$product || $product->stock <= 0) {
+                                            if ($product && $product->is_track_stock && $product->stock <= 0) {
                                                 $fail("Stok produk ini sedang kosong.");
                                             }
                                         },

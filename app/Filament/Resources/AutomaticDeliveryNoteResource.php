@@ -20,6 +20,11 @@ use Filament\Notifications\Notification;
 class AutomaticDeliveryNoteResource extends Resource
 {
     protected static ?string $model = DeliveryNote::class;
+    
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'Surat Jalan Otomatis';

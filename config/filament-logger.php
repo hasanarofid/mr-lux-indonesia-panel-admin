@@ -17,6 +17,7 @@ return [
             \App\Filament\Resources\SaleResource::class,
             \App\Filament\Resources\AutomaticDeliveryNoteResource::class,
             \App\Filament\Resources\ManualDeliveryNoteResource::class,
+            \App\Filament\Resources\StockEntryResource::class,
         ],
         'cluster' => null,
         'navigation_group' =>'User Management',

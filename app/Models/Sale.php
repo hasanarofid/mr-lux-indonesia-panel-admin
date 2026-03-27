@@ -80,7 +80,8 @@ class Sale extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->logOnly(['invoice_number', 'status', 'grand_total', 'name', 'item_summary'])
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Penjualan {$eventName} by " . (auth()->user()?->name ?? 'System'));
     }
 
     public function getItemSummaryAttribute(): string

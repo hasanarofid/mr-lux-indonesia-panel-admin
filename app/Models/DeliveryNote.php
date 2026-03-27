@@ -67,7 +67,8 @@ class DeliveryNote extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->logOnly(['number', 'status', 'name', 'type', 'item_summary'])
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Surat Jalan {$eventName} by " . (auth()->user()?->name ?? 'System'));
     }
 
     public function getItemSummaryAttribute(): string

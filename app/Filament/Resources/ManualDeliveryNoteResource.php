@@ -140,6 +140,7 @@ class ManualDeliveryNoteResource extends Resource
                                             $set('unit', strtoupper($product?->uom ?? 'PCS'));
                                         }
                                     })
+                                    ->disabled()
                                     ->columnSpan(['md' => 4]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
@@ -153,10 +154,13 @@ class ManualDeliveryNoteResource extends Resource
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
+                                    ->disabled()
                                     ->columnSpan(['md' => 1]),
                             ])
                             ->columns(12)
                             ->defaultItems(1)
+                            ->addable(false)
+                            ->deletable(false)
                             ->reorderable(false),
                     ])
                     ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),

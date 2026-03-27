@@ -34,7 +34,8 @@ class StockEntry extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->logOnly(['item_summary'])
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Mutasi Stok {$eventName} by " . (auth()->user()?->name ?? 'System'));
     }
 
     public function getItemSummaryAttribute(): string

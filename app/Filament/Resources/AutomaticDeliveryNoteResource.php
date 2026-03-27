@@ -203,7 +203,7 @@ class AutomaticDeliveryNoteResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->before(function (Collection $records) {
+                        ->before(function (\Filament\Tables\Actions\DeleteBulkAction $action, Collection $records) {
                             if ($records->where('status', 'DELIVERED')->isNotEmpty()) {
                                 Notification::make()
                                     ->danger()
@@ -211,7 +211,7 @@ class AutomaticDeliveryNoteResource extends Resource
                                     ->body('Beberapa surat jalan yang dipilih sudah DELIVERED dan tidak bisa dihapus.')
                                     ->send();
 
-                                throw new \Exception('Delivered records cannot be deleted.');
+                                $action->halt();
                             }
                         }),
                 ]),

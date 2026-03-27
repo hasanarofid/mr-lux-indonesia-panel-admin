@@ -79,7 +79,14 @@ class Sale extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->logOnly(['invoice_number', 'status', 'grand_total', 'name'])
+            ->logOnly(['invoice_number', 'status', 'grand_total', 'name', 'item_summary'])
             ->dontSubmitEmptyLogs();
+    }
+
+    public function getItemSummaryAttribute(): string
+    {
+        return $this->items->map(function ($item) {
+            return $item->product ? $item->product->name : 'Unknown Product';
+        })->filter()->unique()->implode(', ');
     }
 }

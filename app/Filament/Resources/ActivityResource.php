@@ -76,7 +76,7 @@ class ActivityResource extends BaseActivityResource
                 $typeName = $subject->type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
             }
 
-            $summary = static::getItemSummary($subject);
+            $summary = static::getItemSummary($record);
 
             return "{$typeName} {$name}{$summary}";
         }
@@ -114,11 +114,24 @@ class ActivityResource extends BaseActivityResource
             $typeName = $type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
         }
 
-        return "{$typeName} {$name}";
+        $summary = static::getItemSummary($record);
+
+        return "{$typeName} {$name}{$summary}";
     }
 
-    protected static function getItemSummary($subject): string
+    protected static function getItemSummary(Model $record): string
     {
+        // Try to get from properties first (works for deleted records)
+        $summary = $record->properties->get('attributes')['item_summary'] 
+            ?? $record->properties->get('old')['item_summary'] 
+            ?? null;
+
+        if ($summary) {
+            return " ({$summary})";
+        }
+
+        // Fallback to direct relationship (works for live records)
+        $subject = $record->subject;
         if (!$subject || !method_exists($subject, 'items')) {
             return '';
         }

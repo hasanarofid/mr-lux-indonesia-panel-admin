@@ -33,6 +33,14 @@ class StockEntry extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
+            ->logOnly(['item_summary'])
             ->dontSubmitEmptyLogs();
+    }
+
+    public function getItemSummaryAttribute(): string
+    {
+        return $this->items->map(function ($item) {
+            return $item->product ? $item->product->name : 'Unknown Product';
+        })->filter()->unique()->implode(', ');
     }
 }

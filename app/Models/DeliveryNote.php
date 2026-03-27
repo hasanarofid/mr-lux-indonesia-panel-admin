@@ -13,6 +13,9 @@ class DeliveryNote extends Model
     protected static function booted()
     {
         static::deleting(function ($deliveryNote) {
+            if ($deliveryNote->status === 'DELIVERED') {
+                throw new \Exception('Surat jalan yang sudah terkirim (DELIVERED) tidak bisa dihapus.');
+            }
             $deliveryNote->items()->each(fn($item) => $item->delete());
         });
     }
@@ -63,7 +66,14 @@ class DeliveryNote extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->logOnly(['number', 'status', 'name', 'type'])
+            ->logOnly(['number', 'status', 'name', 'type', 'item_summary'])
             ->dontSubmitEmptyLogs();
+    }
+
+    public function getItemSummaryAttribute(): string
+    {
+        return $this->items->map(function ($item) {
+            return $item->product ? $item->product->name : 'Unknown Product';
+        })->filter()->unique()->implode(', ');
     }
 }

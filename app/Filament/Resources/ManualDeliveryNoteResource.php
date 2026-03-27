@@ -15,6 +15,8 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Filament\Notifications\Notification;
 
 class ManualDeliveryNoteResource extends Resource
 {
@@ -218,7 +220,18 @@ class ManualDeliveryNoteResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Collection $records) {
+                            if ($records->where('status', 'DELIVERED')->isNotEmpty()) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Gagal!')
+                                    ->body('Beberapa surat jalan yang dipilih sudah DELIVERED dan tidak bisa dihapus.')
+                                    ->send();
+
+                                throw new \Exception('Delivered records cannot be deleted.');
+                            }
+                        }),
                 ]),
             ]);
     }

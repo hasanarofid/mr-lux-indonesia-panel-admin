@@ -39,6 +39,11 @@ class Product extends Model
         return $this->hasMany(StockEntryItem::class);
     }
 
+    public function getStockAttribute($value)
+    {
+        return max(0, $value);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

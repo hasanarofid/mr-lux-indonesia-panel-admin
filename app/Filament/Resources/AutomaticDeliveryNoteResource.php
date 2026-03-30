@@ -123,7 +123,9 @@ class AutomaticDeliveryNoteResource extends Resource
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
-                            ->disabled()
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
                             ->helperText('Item surat jalan otomatis tidak bisa diedit secara langsung. Silakan edit Invoice terkait untuk mengubah barang.')
                             ->schema([
                                 Forms\Components\Select::make('product_id')
@@ -138,15 +140,21 @@ class AutomaticDeliveryNoteResource extends Resource
                                             $set('unit', $product?->uom ?? 'PCS');
                                         }
                                     })
+                                    ->disabled()
+                                    ->dehydrated()
                                     ->columnSpan(4),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
+                                    ->disabled()
+                                    ->dehydrated()
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()
                                     ->required()
+                                    ->disabled()
+                                    ->dehydrated()
                                     ->columnSpan(2),
                             ])
                             ->columns(8)

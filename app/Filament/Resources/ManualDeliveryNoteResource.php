@@ -178,6 +178,7 @@ class ManualDeliveryNoteResource extends Resource
                                         }
                                     })
                                     ->disabled()
+                                    ->dehydrated()
                                     ->columnSpan(['md' => 4]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')

@@ -218,6 +218,18 @@
                         <td>Tanggal:</td>
                         <td style="padding-left: 5px;">{{ \Carbon\Carbon::parse($deliveryNote->date)->translatedFormat('d M Y') }}</td>
                     </tr>
+                    @if($deliveryNote->driver_name)
+                    <tr>
+                        <td>Sopir:</td>
+                        <td style="padding-left: 5px;">{{ $deliveryNote->driver_name }}</td>
+                    </tr>
+                    @endif
+                    @if($deliveryNote->vehicle_number)
+                    <tr>
+                        <td>No. Kendaraan:</td>
+                        <td style="padding-left: 5px;">{{ $deliveryNote->vehicle_number }}</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
         </div>

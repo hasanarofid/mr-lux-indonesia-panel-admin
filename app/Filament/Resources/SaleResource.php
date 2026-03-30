@@ -83,7 +83,7 @@ class SaleResource extends Resource
                             ->default('Belum Lunas')
                             ->required(),
                     ])->columns(2)
-                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
+                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
 
                 Forms\Components\Section::make('Item')
                     ->schema([
@@ -246,7 +246,7 @@ class SaleResource extends Resource
                                 'onkeydown' => "if (event.key === 'Enter') { event.preventDefault(); return false; }",
                             ]),
                         ])
-                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
+                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
 
                 Forms\Components\Section::make('Ringkasan')
                     ->schema([
@@ -315,7 +315,7 @@ class SaleResource extends Resource
                         Forms\Components\Hidden::make('discount_item_total')
                             ->default(0),
                     ])->columns(2)
-                    ->disabled(fn (?Sale $record) => $record?->status === 'Lunas'),
+                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
             ]);
     }
 

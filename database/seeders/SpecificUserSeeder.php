@@ -15,6 +15,12 @@ class SpecificUserSeeder extends Seeder
     {
         $users = [
             [
+                'name' => 'Minella',
+                'email' => 'minella@mrluxindonesia.com',
+                'password' => Hash::make('password'),
+                'role' => 'super_admin',
+            ],
+             [
                 'name' => 'Akhsan',
                 'email' => 'akhsan@mrluxindonesia.com',
                 'password' => Hash::make('password'),

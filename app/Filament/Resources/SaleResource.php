@@ -58,7 +58,6 @@ class SaleResource extends Resource
                             ])
                             ->default('NORMAL')
                             ->live()
-                            ->disabledOn('edit')
                             ->dehydrated(),
 
                         Forms\Components\TextInput::make('invoice_number')

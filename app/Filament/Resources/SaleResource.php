@@ -94,7 +94,7 @@ class SaleResource extends Resource
                                     ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0)->orWhere('is_track_stock', false))
                                     ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}" . ($record->is_track_stock ? " (Stok: " . number_format($record->stock, 0, ',', '.') . ")" : " (Non-Stok)"))
                                     ->searchable(['name', 'sku'])
-                                    ->required()
+                                    ->nullable()
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('name')
                                             ->label('Nama Produk')
@@ -137,6 +137,7 @@ class SaleResource extends Resource
                                         if ($product) {
                                             $unit = $product->uom ?? 'PCS';
                                             $set('unit', $unit);
+                                            $set('description', null);
                                             
                                             $price = match($unit) {
                                                 'DUS' => $product->price_per_carton,
@@ -149,6 +150,14 @@ class SaleResource extends Resource
                                         }
                                         self::updateItemSubtotal($get, $set);
                                     }),
+                                Forms\Components\TextInput::make('description')
+                                    ->label('Deskripsi Manual')
+                                    ->placeholder('Isi jika tidak memilih produk')
+                                    ->visible(fn (Forms\Get $get) => ! $get('product_id'))
+                                    ->dehydrated()
+                                    ->nullable()
+                                    ->columnSpan(2),
+
                                 Forms\Components\Select::make('unit')
                                     ->label('Satuan')
                                     ->options([
@@ -398,8 +407,8 @@ class SaleResource extends Resource
         $ppnAmount = $isPpn ? round($baseTotal * 0.11) : 0;
         $grandTotal = $baseTotal + $ppnAmount + $shippingCost;
 
-        // Try setting both local and parent for summary fields.
-        $isInRow = !empty($get('product_id'));
+        // Detect if we're inside a repeater row by checking for item-specific fields
+        $isInRow = $get('price') !== null || $get('quantity') !== null;
 
         if ($isInRow) {
             $set('../../subtotal', self::formatMoney($subtotal));

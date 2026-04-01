@@ -38,7 +38,7 @@ class CreateSale extends CreateRecord
                 'status' => 'PENDING',
             ]);
 
-            foreach ($sale->items as $item) {
+            foreach ($sale->items->filter(fn ($item) => $item->product_id !== null) as $item) {
                 $deliveryNote->items()->create([
                     'product_id' => $item->product_id,
                     'unit' => $item->unit ?? ($item->product ? $item->product->uom : 'PCS'),

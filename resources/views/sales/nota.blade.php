@@ -165,10 +165,12 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>
-                    <div style="font-weight: 600;">{{ $item->product->name }}</div>
+                    <div style="font-weight: 600;">
+                        {{ $item->product ? $item->product->name : ($item->description ?? '-') }}
+                    </div>
                 </td>
                 <td class="text-center">{{ number_format($item->quantity, 0, ',', '.') }}</td>
-                <td class="text-center">{{ $item->unit ?? $item->product->uom }}</td>
+                <td class="text-center">{{ $item->unit ?? ($item->product?->uom ?? '-') }}</td>
                 <td class="text-right">Rp {{ number_format((float)($item->price ?? 0), 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format((float)($item->subtotal ?? 0), 0, ',', '.') }}</td>
             </tr>

@@ -247,11 +247,11 @@
             @foreach($deliveryNote->items as $item)
             @php
                 $qty = $item->quantity;
-                $isi = $item->product->isi ?? 0;
-                $uom = $item->unit ?? $item->product->uom ?? 'PCS';
+                $isi = $item->product?->isi ?? 0;
+                $uom = $item->unit ?? $item->product?->uom ?? 'PCS';
                 
                 $displayText = '';
-                if ($isi > 0 && $qty >= $isi) {
+                if ($item->product && $isi > 0 && $qty >= $isi) {
                     $dus = floor($qty / $isi);
                     $sisa = $qty % $isi;
                     
@@ -264,8 +264,8 @@
                 }
             @endphp
             <tr>
-                <td>{{ $item->product->sku ?? '-' }}</td>
-                <td>{{ $item->product->name }}</td>
+                <td>{{ $item->product?->sku ?? '-' }}</td>
+                <td>{{ $item->product?->name ?? $item->description ?? '-' }}</td>
                 <td class="text-right">{{ $displayText }}</td>
             </tr>
             @endforeach

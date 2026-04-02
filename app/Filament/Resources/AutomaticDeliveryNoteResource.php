@@ -70,6 +70,7 @@ class AutomaticDeliveryNoteResource extends Resource
 
                                         $items = $sale->items->map(fn ($item) => [
                                             'product_id' => $item->product_id,
+                                            'description' => $item->description,
                                             'unit' => $item->unit,
                                             'quantity' => $item->quantity,
                                         ])->toArray();
@@ -142,13 +143,18 @@ class AutomaticDeliveryNoteResource extends Resource
                                     })
                                     ->disabled()
                                     ->dehydrated()
-                                    ->columnSpan(4),
+                                    ->columnSpan(3),
+                                Forms\Components\TextInput::make('description')
+                                    ->label('Keterangan Custom')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->columnSpan(3),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
                                     ->disabled()
                                     ->dehydrated()
-                                    ->columnSpan(2),
+                                    ->columnSpan(1),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()

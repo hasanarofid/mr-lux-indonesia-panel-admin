@@ -10,6 +10,7 @@ class DeliveryNoteItem extends Model
         'delivery_note_id',
         'sale_id',
         'product_id',
+        'description',
         'unit',
         'quantity',
     ];

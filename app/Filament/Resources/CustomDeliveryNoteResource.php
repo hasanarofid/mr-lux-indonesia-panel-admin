@@ -100,7 +100,6 @@ class CustomDeliveryNoteResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
-                                    ->required()
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
@@ -110,13 +109,18 @@ class CustomDeliveryNoteResource extends Resource
                                         }
                                     })
                                     ->dehydrated()
-                                    ->columnSpan(['md' => 4]),
+                                    ->columnSpan(['md' => 3]),
+                                Forms\Components\TextInput::make('description')
+                                    ->label('Keterangan Custom')
+                                    ->maxLength(255)
+                                    ->dehydrated()
+                                    ->columnSpan(['md' => 3]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
                                     ->readOnly()
                                     ->dehydrated()
-                                    ->columnSpan(['md' => 2]),
+                                    ->columnSpan(['md' => 1]),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->required()

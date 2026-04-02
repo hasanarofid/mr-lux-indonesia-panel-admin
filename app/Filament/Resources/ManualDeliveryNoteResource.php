@@ -82,6 +82,7 @@ class ManualDeliveryNoteResource extends Resource
                                                     'invoice_number' => $sale->invoice_number,
                                                     'customer_name' => $sale->customer?->name,
                                                     'product_id' => $item->product_id,
+                                                    'description' => $item->description,
                                                     'unit' => strtoupper($item->unit),
                                                     'quantity' => (float)$item->quantity,
                                                 ];
@@ -179,7 +180,12 @@ class ManualDeliveryNoteResource extends Resource
                                     })
                                     ->disabled()
                                     ->dehydrated()
-                                    ->columnSpan(['md' => 4]),
+                                    ->columnSpan(['md' => 3]),
+                                Forms\Components\TextInput::make('description')
+                                    ->label('Keterangan Custom')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->columnSpan(['md' => 3]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()

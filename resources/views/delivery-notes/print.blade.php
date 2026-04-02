@@ -204,7 +204,7 @@
                 <table>
                     <tr>
                         <td width="60">Nama</td>
-                        <td>: {{ $customer->name ?? 'Pelanggan Umum' }}</td>
+                        <td>: {{ $customer?->name ?? 'Pelanggan Umum' }}</td>
                     </tr>
                     <tr>
                         <td>Alamat</td>

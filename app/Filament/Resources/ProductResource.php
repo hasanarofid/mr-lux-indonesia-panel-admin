@@ -154,7 +154,7 @@ class ProductResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('isi')
                     ->label('Isi/Dus')
-                    ->numeric()
+                    ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
@@ -165,10 +165,10 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('dus')
                     ->label('Dus')
                     ->getStateUsing(fn (Product $record) => $record->isi > 0 ? floor($record->stock / $record->isi) : 0)
-                    ->numeric(),
+                    ->numeric(decimalPlaces: 0),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')
-                    ->numeric()
+                    ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

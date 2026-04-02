@@ -260,7 +260,7 @@
                         $displayText .= ' ' . $sisa . ' ' . $uom;
                     }
                 } else {
-                    $displayText = $qty . ' ' . $uom;
+                    $displayText = number_format($qty, 0, ',', '.') . ' ' . $uom;
                 }
             @endphp
             <tr>

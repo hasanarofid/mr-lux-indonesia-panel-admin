@@ -51,25 +51,21 @@ class SalesReportResource extends Resource
                     }),
             ])
             ->filters([
-                Tables\Filters\Filter::make('from_date')
+                Tables\Filters\Filter::make('date')
                     ->form([
                         Forms\Components\DatePicker::make('from')->label('Dari Tanggal'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query->when(
-                            $data['from'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
-                        );
-                    }),
-                Tables\Filters\Filter::make('to_date')
-                    ->form([
                         Forms\Components\DatePicker::make('to')->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query->when(
-                            $data['to'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
-                        );
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                            )
+                            ->when(
+                                $data['to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
                     }),
                 Tables\Filters\SelectFilter::make('customer')
                     ->label('Pelanggan')
@@ -90,6 +86,16 @@ class SalesReportResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->color('info')
                     ->url(fn ($livewire) => route('sales.report.print', [
+                        'from' => $livewire->tableFilters['date']['from'] ?? null,
+                        'to' => $livewire->tableFilters['date']['to'] ?? null,
+                        'customer' => $livewire->tableFilters['customer']['value'] ?? null,
+                    ]))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Download Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn ($livewire) => route('sales.report.excel', [
                         'from' => $livewire->tableFilters['date']['from'] ?? null,
                         'to' => $livewire->tableFilters['date']['to'] ?? null,
                         'customer' => $livewire->tableFilters['customer']['value'] ?? null,

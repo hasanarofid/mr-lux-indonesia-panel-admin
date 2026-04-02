@@ -158,6 +158,7 @@ class AutomaticDeliveryNoteResource extends Resource
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->required()
                                     ->disabled()
                                     ->dehydrated()

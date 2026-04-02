@@ -61,6 +61,7 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('isi')
                             ->label(fn (Forms\Get $get) => 'Isi per ' . ($get('uom') ?? 'PCS') . ' / Dus')
                             ->numeric()
+                            ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                             ->default(1)
                             ->required()
                             ->live(onBlur: true)
@@ -68,6 +69,7 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('isi_set')
                             ->label('Units per Set (Isi)')
                             ->numeric()
+                            ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                             ->default(1)
                             ->required()
                             ->hidden(fn (Forms\Get $get) => in_array($get('uom'), ['PCS', 'SET', 'KG'])),

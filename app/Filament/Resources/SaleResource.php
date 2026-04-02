@@ -95,33 +95,33 @@ class SaleResource extends Resource
                                     ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}" . ($record->is_track_stock ? " (Stok: " . number_format($record->stock, 0, ',', '.') . ")" : " (Non-Stok)"))
                                     ->searchable(['name', 'sku'])
                                     ->nullable()
-                                    ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nama Produk')
-                                            ->required(),
-                                        Forms\Components\TextInput::make('category')
-                                            ->label('Kategori')
-                                            ->default('Manual')
-                                            ->datalist(fn () => \App\Models\Product::query()->whereNotNull('category')->distinct()->pluck('category')->toArray())
-                                            ->required(),
-                                        Forms\Components\Toggle::make('is_track_stock')
-                                            ->label('Lacak Stok')
-                                            ->default(false),
-                                        Forms\Components\Select::make('uom')
-                                            ->label('Satuan')
-                                            ->options([
-                                                'PCS' => 'PCS',
-                                                'SET' => 'SET',
-                                                'KG' => 'KG',
-                                            ])
-                                            ->default('PCS')
-                                            ->required(),
-                                        Forms\Components\TextInput::make('price')
-                                            ->label('Harga Jual')
-                                            ->prefix('Rp')
-                                            ->numeric()
-                                            ->required(),
-                                    ])
+                                    // ->createOptionForm([
+                                    //     Forms\Components\TextInput::make('name')
+                                    //         ->label('Nama Produk')
+                                    //         ->required(),
+                                    //     Forms\Components\TextInput::make('category')
+                                    //         ->label('Kategori')
+                                    //         ->default('Manual')
+                                    //         ->datalist(fn () => \App\Models\Product::query()->whereNotNull('category')->distinct()->pluck('category')->toArray())
+                                    //         ->required(),
+                                    //     Forms\Components\Toggle::make('is_track_stock')
+                                    //         ->label('Lacak Stok')
+                                    //         ->default(false),
+                                    //     Forms\Components\Select::make('uom')
+                                    //         ->label('Satuan')
+                                    //         ->options([
+                                    //             'PCS' => 'PCS',
+                                    //             'SET' => 'SET',
+                                    //             'KG' => 'KG',
+                                    //         ])
+                                    //         ->default('PCS')
+                                    //         ->required(),
+                                    //     Forms\Components\TextInput::make('price')
+                                    //         ->label('Harga Jual')
+                                    //         ->prefix('Rp')
+                                    //         ->numeric()
+                                    //         ->required(),
+                                    // ])
                                     ->rules([
                                         fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) {
                                             if (!$value) return;
@@ -158,6 +158,11 @@ class SaleResource extends Resource
                                     ->nullable()
                                     ->columnSpan(2),
 
+                                Forms\Components\TextInput::make('unit')
+                                    ->label('Satuan')
+                                    ->hidden(fn (Forms\Get $get) => filled($get('product_id')))
+                                    ->dehydrated(fn (Forms\Get $get) => blank($get('product_id')))
+                                    ->live(),
                                 Forms\Components\Select::make('unit')
                                     ->label('Satuan')
                                     ->options([
@@ -166,7 +171,8 @@ class SaleResource extends Resource
                                         'SET' => 'SET',
                                         'KG' => 'KG',
                                     ])
-                                    ->default('PCS')
+                                    ->visible(fn (Forms\Get $get) => filled($get('product_id')))
+                                    ->dehydrated(fn (Forms\Get $get) => filled($get('product_id')))
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {

@@ -72,6 +72,7 @@ class StockEntryResource extends Resource
                                 Forms\Components\TextInput::make('isi')
                                     ->label(fn (Forms\Get $get) => 'Isi per ' . (\App\Models\Product::find($get('product_id'))?->uom ?? 'PCS') . ' / Dus')
                                     ->numeric()
+                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->disabled()
                                     ->dehydrated(false)
                                     ->afterStateHydrated(function ($state, Forms\Set $set, Forms\Get $get) {

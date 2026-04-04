@@ -32,10 +32,10 @@ class SalesReportExcelController extends Controller
 
         foreach ($sales as $sale) {
             $writer->addRow([
-                'Tanggal' => $sale->date,
+                'Tanggal' => $sale->date ? $sale->date->format('d/m/Y') : '',
                 'Nomor Invoice' => $sale->invoice_number,
                 'Pelanggan' => $sale->customer?->name ?? 'N/A',
-                'Total' => $sale->grand_total,
+                'Total' => (int) $sale->grand_total,
                 'Status' => $sale->status,
             ]);
         }

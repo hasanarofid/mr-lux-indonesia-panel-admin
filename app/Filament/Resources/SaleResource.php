@@ -83,8 +83,7 @@ class SaleResource extends Resource
                             ])
                             ->default('Belum Lunas')
                             ->required(),
-                    ])->columns(2)
-                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
+                    ])->columns(2),
 
                 Forms\Components\Section::make('Item')
                     ->schema([
@@ -261,8 +260,7 @@ class SaleResource extends Resource
                             ->extraAttributes([
                                 'onkeydown' => "if (event.key === 'Enter') { event.preventDefault(); return false; }",
                             ]),
-                        ])
-                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
+                        ]),
 
                 Forms\Components\Section::make('Ringkasan')
                     ->schema([
@@ -330,8 +328,7 @@ class SaleResource extends Resource
                             ->columnSpanFull(),
                         Forms\Components\Hidden::make('discount_item_total')
                             ->default(0),
-                    ])->columns(2)
-                    ->disabled(fn (?Sale $record) => $record?->exists && $record->status === 'Lunas'),
+                    ])->columns(2),
             ]);
     }
 
@@ -499,26 +496,8 @@ class SaleResource extends Resource
                     ->url(fn(Sale $record): string => route('sales.print', $record))
                     ->openUrlInNewTab(),
                 ViewAction::make(),
-                EditAction::make()
-                    ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
+                EditAction::make(),
                 DeleteAction::make()
-                    ->action(function (DeleteAction $action, Sale $record) {
-                        try {
-                            $record->delete();
-                            Notification::make()
-                                ->title('Berhasil dihapus')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Gagal menghapus')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->persistent()
-                                ->send();
-                        }
-                    })
-                    ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -3,19 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class DeliveryNote extends Model
 {
-    use LogsActivity;
+    use SoftDeletes, LogsActivity;
 
     protected static function booted()
     {
         static::deleting(function ($deliveryNote) {
-            if ($deliveryNote->status === 'DELIVERED') {
-                throw new \Exception('Surat jalan yang sudah terkirim (DELIVERED) tidak bisa dihapus.');
-            }
             $deliveryNote->items()->each(fn($item) => $item->delete());
         });
     }

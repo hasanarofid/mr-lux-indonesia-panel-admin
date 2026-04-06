@@ -14,10 +14,16 @@ return new class extends Migration
         Schema::table('sale_items', function (Blueprint $table) {
             // Make product_id nullable to allow manual items without a product
             $table->foreignId('product_id')->nullable()->change();
-            // Add description column for manual items
-            $table->string('description')->nullable()->after('product_id');
+            
+            // Add description column for manual items if missing
+            if (!Schema::hasColumn('sale_items', 'description')) {
+                $table->string('description')->nullable()->after('product_id');
+            }
+            
             // Add discount_percent column if missing
-            $table->decimal('discount_percent', 5, 2)->default(0)->after('quantity');
+            if (!Schema::hasColumn('sale_items', 'discount_percent')) {
+                $table->decimal('discount_percent', 5, 2)->default(0)->after('quantity');
+            }
         });
     }
 

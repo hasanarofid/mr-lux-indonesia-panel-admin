@@ -60,7 +60,10 @@ class SaleItemObserver
      */
     public function restored(SaleItem $saleItem): void
     {
-        //
+        $product = \App\Models\Product::withTrashed()->find($saleItem->product_id);
+        if ($product && $product->is_track_stock) {
+            $product->decrement('stock', (float) $saleItem->quantity);
+        }
     }
 
     /**

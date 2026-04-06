@@ -14,8 +14,10 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Table;
 use Filament\Support\RawJs;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class SaleResource extends Resource
 {
@@ -500,11 +502,46 @@ class SaleResource extends Resource
                 EditAction::make()
                     ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
                 DeleteAction::make()
+                    ->action(function (DeleteAction $action, Sale $record) {
+                        try {
+                            $record->delete();
+                            Notification::make()
+                                ->title('Berhasil dihapus')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal menghapus')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    })
                     ->hidden(fn (Sale $record) => $record->status === 'Lunas'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+                            $records->each(function (Sale $record) {
+                                try {
+                                    $record->delete();
+                                } catch (\Exception $e) {
+                                    Notification::make()
+                                        ->title("Gagal menghapus {$record->invoice_number}")
+                                        ->body($e->getMessage())
+                                        ->danger()
+                                        ->persistent()
+                                        ->send();
+                                }
+                            });
+
+                            Notification::make()
+                                ->title('Proses hapus selesai')
+                                ->success()
+                                ->send();
+                        }),
                 ]),
             ]);
     }

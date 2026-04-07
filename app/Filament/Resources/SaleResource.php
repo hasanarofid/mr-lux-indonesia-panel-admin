@@ -133,6 +133,7 @@ class SaleResource extends Resource
                                         },
                                     ])
                                     ->live()
+                                    ->columnSpan(3)
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($state);
                                         if ($product) {
@@ -157,13 +158,14 @@ class SaleResource extends Resource
                                     ->visible(fn (Forms\Get $get) => ! $get('product_id'))
                                     ->dehydrated()
                                     ->nullable()
-                                    ->columnSpan(2),
+                                    ->columnSpan(4),
 
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->hidden(fn (Forms\Get $get) => filled($get('product_id')))
                                     ->dehydrated(fn (Forms\Get $get) => blank($get('product_id')))
-                                    ->live(),
+                                    ->live()
+                                    ->columnSpan(1),
                                 Forms\Components\Select::make('unit')
                                     ->label('Satuan')
                                     ->options([
@@ -176,6 +178,7 @@ class SaleResource extends Resource
                                     ->dehydrated(fn (Forms\Get $get) => filled($get('product_id')))
                                     ->required()
                                     ->live()
+                                    ->columnSpan(1)
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($get('product_id'));
                                         if ($product) {
@@ -198,7 +201,8 @@ class SaleResource extends Resource
                                     ->live(onBlur: true)
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
-                                    ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set)),
+                                    ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateItemSubtotal($get, $set))
+                                    ->columnSpan(1),
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga')
                                     ->required()
@@ -210,7 +214,8 @@ class SaleResource extends Resource
                                     ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                         self::updateItemSubtotal($get, $set);
-                                    }),
+                                    })
+                                    ->columnSpan(2),
                                 Forms\Components\TextInput::make('discount_percent')
                                     ->label('Diskon %')
                                     ->numeric()
@@ -225,7 +230,8 @@ class SaleResource extends Resource
                                         $discountNominal = round($lineSubtotal * (self::parseNumber($state) / 100));
                                         $set('discount_item', self::formatMoney($discountNominal));
                                         self::updateItemSubtotal($get, $set);
-                                    }),
+                                    })
+                                    ->columnSpan(1),
                                 Forms\Components\TextInput::make('discount_item')
                                     ->label('Diskon Rp')
                                     ->default(0)
@@ -246,15 +252,17 @@ class SaleResource extends Resource
                                         }
                                         $set('discount_item', self::formatMoney($nominal));
                                         self::updateItemSubtotal($get, $set);
-                                    }),
+                                    })
+                                    ->columnSpan(2),
                                 Forms\Components\TextInput::make('subtotal')
                                     ->required()
                                     ->readOnly()
                                     ->prefix('Rp')
                                     ->formatStateUsing(fn ($state) => self::formatMoney($state))
-                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state)),
+                                    ->dehydrateStateUsing(fn ($state) => self::parseNumber($state))
+                                    ->columnSpan(2),
                             ])
-                            ->columns(6)
+                            ->columns(12)
                             ->live()
                             ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::calculateTotals($get, $set))
                             ->extraAttributes([

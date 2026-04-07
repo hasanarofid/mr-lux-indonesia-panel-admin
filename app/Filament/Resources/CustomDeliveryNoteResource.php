@@ -97,30 +97,16 @@ class CustomDeliveryNoteResource extends Resource
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
-                                Forms\Components\Select::make('product_id')
-                                    ->label('Produk')
-                                    ->relationship('product', 'name')
-                                    ->searchable()
-                                    ->live()
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                        if ($state) {
-                                            $product = \App\Models\Product::find($state);
-                                            $set('unit', strtoupper($product?->uom ?? 'PCS'));
-                                        }
-                                    })
-                                    ->dehydrated()
-                                    ->columnSpan(['md' => 3]),
                                 Forms\Components\TextInput::make('description')
-                                    ->label('Keterangan Custom')
+                                    ->label('Produk')
+                                    ->required()
                                     ->maxLength(255)
-                                    ->dehydrated()
-                                    ->columnSpan(['md' => 3]),
+                                    ->columnSpan(['md' => 4]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
-                                    ->readOnly()
                                     ->dehydrated()
-                                    ->columnSpan(['md' => 1]),
+                                    ->columnSpan(['md' => 2]),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->required()

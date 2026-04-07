@@ -41,7 +41,7 @@ class ManualDeliveryNoteResource extends Resource
                             ->default('MANUAL'),
                         Forms\Components\Select::make('sales')
                             ->label('Nomor Invoice (Opsional)')
-                            ->relationship('sales', 'invoice_number', fn (Builder $query) => $query->where('invoice_type', 'SJM'))
+                            ->relationship('sales', 'invoice_number')
                             ->multiple()
                             ->searchable()
                             ->preload()
@@ -169,7 +169,7 @@ class ManualDeliveryNoteResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
-                                    ->required()
+                                    ->nullable()
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {

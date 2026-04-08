@@ -26,7 +26,7 @@ class SalesReportExcelController extends Controller
             $query->where('customer_id', $request->customer);
         }
 
-        $sales = $query->orderBy('date', 'asc')->get();
+        $sales = $query->orderBy('date', 'desc')->get();
 
         $writer = SimpleExcelWriter::streamDownload('laporan-penjualan.xlsx');
 

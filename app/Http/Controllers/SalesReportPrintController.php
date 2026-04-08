@@ -26,7 +26,7 @@ class SalesReportPrintController extends Controller
             $query->where('customer_id', $request->customer);
         }
 
-        $sales = $query->orderBy('date', 'asc')->get();
+        $sales = $query->orderBy('date', 'desc')->get();
         
         $customer = null;
         if ($request->filled('customer')) {

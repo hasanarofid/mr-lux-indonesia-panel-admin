@@ -199,6 +199,7 @@ class ManualDeliveryNoteResource extends Resource
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
                                     ->disabled()
+                                    ->dehydrated()
                                     ->columnSpan(['md' => 1]),
                             ])
                             ->columns(12)

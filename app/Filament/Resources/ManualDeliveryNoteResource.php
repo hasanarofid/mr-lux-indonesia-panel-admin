@@ -273,7 +273,8 @@ class ManualDeliveryNoteResource extends Resource
                             }
                         }),
                 ]),
-            ]);
+            ])
+            ->defaultSort('date', 'desc');
     }
 
     public static function getEloquentQuery(): Builder

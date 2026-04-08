@@ -101,7 +101,8 @@ class SalesReportResource extends Resource
                         'customer' => $livewire->tableFilters['customer']['value'] ?? null,
                     ]))
                     ->openUrlInNewTab(),
-            ]);
+            ])
+            ->defaultSort('date', 'desc');
     }
 
     public static function getEloquentQuery(): Builder

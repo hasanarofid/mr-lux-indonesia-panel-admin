@@ -516,7 +516,8 @@ class SaleResource extends Resource
                                 ->send();
                         }),
                 ]),
-            ]);
+            ])
+            ->defaultSort('date', 'desc');
     }
 
     public static function getEloquentQuery(): Builder

@@ -18,6 +18,12 @@ class EditSale extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('print')
+                ->label('Cetak Nota')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->url(fn () => route('sales.print', $this->record))
+                ->openUrlInNewTab(),
             Actions\DeleteAction::make()
                 ->hidden(fn () => $this->record->status === 'Lunas'),
         ];
@@ -25,10 +31,6 @@ class EditSale extends EditRecord
 
     protected function getFormActions(): array
     {
-        if ($this->record->status === 'Lunas') {
-            return [];
-        }
-
         return parent::getFormActions();
     }
 
@@ -53,6 +55,7 @@ class EditSale extends EditRecord
             foreach ($sale->items as $item) {
                 $deliveryNote->items()->create([
                     'product_id' => $item->product_id,
+                    'description' => $item->description,
                     'unit' => $item->unit ?? ($item->product ? $item->product->uom : 'PCS'),
                     'quantity' => $item->quantity,
                 ]);

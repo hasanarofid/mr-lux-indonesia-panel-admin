@@ -117,51 +117,45 @@ class AutomaticDeliveryNoteResource extends Resource
                         Forms\Components\TextInput::make('vehicle_number')
                             ->label('Nomor Kendaraan')
                             ->maxLength(255),
-                    ])->columns(2)
-                    ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),
+                    ])->columns(2),
 
                 Forms\Components\Section::make('Item Barang')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
-                            ->addable(false)
-                            ->deletable(false)
+                            ->addable()
+                            ->deletable()
                             ->reorderable(false)
                             ->helperText('Item surat jalan otomatis tidak bisa diedit secara langsung. Silakan edit Invoice terkait untuk mengubah barang.')
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
-                                    ->required()
+                                    ->nullable()
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                         if ($state) {
                                             $product = \App\Models\Product::find($state);
-                                            $set('unit', $product?->uom ?? 'PCS');
+                                            if ($product) {
+                                                $set('unit', $product->uom ?? 'PCS');
+                                                $set('description', $product->name);
+                                            }
                                         }
                                     })
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(3),
                                 Forms\Components\TextInput::make('description')
                                     ->label('Keterangan Custom')
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(3),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(1),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->required()
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(2),
                             ])
                             ->columns(8)

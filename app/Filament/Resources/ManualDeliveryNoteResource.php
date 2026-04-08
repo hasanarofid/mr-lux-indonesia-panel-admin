@@ -163,8 +163,6 @@ class ManualDeliveryNoteResource extends Resource
                                 Forms\Components\TextInput::make('customer_name')
                                     ->label('Customer')
                                     ->afterStateHydrated(fn($state, $set, $record) => $set('customer_name', $record?->sale?->customer?->name))
-                                    ->readOnly()
-                                    ->dehydrated(false)
                                     ->columnSpan(['md' => 2]),
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
@@ -175,22 +173,19 @@ class ManualDeliveryNoteResource extends Resource
                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                         if ($state) {
                                             $product = \App\Models\Product::find($state);
-                                            $set('unit', strtoupper($product?->uom ?? 'PCS'));
+                                            if ($product) {
+                                                $set('unit', strtoupper($product->uom ?? 'PCS'));
+                                                $set('description', $product->name);
+                                            }
                                         }
                                     })
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(['md' => 3]),
                                 Forms\Components\TextInput::make('description')
                                     ->label('Keterangan Custom')
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(['md' => 3]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
-                                    ->readOnly()
-                                    ->dehydrated()
                                     ->columnSpan(['md' => 1]),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
@@ -198,14 +193,10 @@ class ManualDeliveryNoteResource extends Resource
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
                                     ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
-                                    ->disabled()
-                                    ->dehydrated()
                                     ->columnSpan(['md' => 1]),
                             ])
                             ->columns(12)
                             ->defaultItems(1)
-                            ->addable(false)
-                            ->deletable(false)
                             ->reorderable(false),
                     ])
                     ->disabled(fn (?DeliveryNote $record) => $record && $record->exists && $record->status === 'DELIVERED'),

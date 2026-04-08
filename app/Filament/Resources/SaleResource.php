@@ -139,7 +139,7 @@ class SaleResource extends Resource
                                         if ($product) {
                                             $unit = $product->uom ?? 'PCS';
                                             $set('unit', $unit);
-                                            $set('description', null);
+                                            
                                             
                                             $price = match($unit) {
                                                 'DUS' => $product->price_per_carton,
@@ -153,36 +153,22 @@ class SaleResource extends Resource
                                         self::updateItemSubtotal($get, $set);
                                     }),
                                 Forms\Components\TextInput::make('description')
-                                    ->label('Deskripsi Manual')
-                                    ->placeholder('Isi jika tidak memilih produk')
-                                    ->visible(fn (Forms\Get $get) => ! $get('product_id'))
+                                    ->label('Keterangan / Deskripsi')
+                                    ->placeholder('Isi jika ada keterangan tambahan atau manual')
                                     ->dehydrated()
                                     ->nullable()
                                     ->columnSpan(4),
 
-                                Forms\Components\TextInput::make('unit')
+                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
-                                    ->hidden(fn (Forms\Get $get) => filled($get('product_id')))
-                                    ->dehydrated(fn (Forms\Get $get) => blank($get('product_id')))
-                                    ->live()
-                                    ->columnSpan(1),
-                                Forms\Components\Select::make('unit')
-                                    ->label('Satuan')
-                                    ->options([
-                                        'PCS' => 'PCS',
-                                        'DUS' => 'DUS',
-                                        'SET' => 'SET',
-                                        'KG' => 'KG',
-                                    ])
-                                    ->visible(fn (Forms\Get $get) => filled($get('product_id')))
-                                    ->dehydrated(fn (Forms\Get $get) => filled($get('product_id')))
+                                    ->datalist(['PCS', 'DUS', 'SET', 'KG'])
                                     ->required()
                                     ->live()
                                     ->columnSpan(1)
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $product = \App\Models\Product::find($get('product_id'));
                                         if ($product) {
-                                            $price = match($state) {
+                                            $price = match(strtoupper($state)) {
                                                 'DUS' => $product->price_per_carton,
                                                 'SET' => ($product->uom === 'SET') ? $product->price : $product->price_per_set,
                                                 'KG' => $product->price,

@@ -93,7 +93,19 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0)->orWhere('is_track_stock', false))
-                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->sku} - {$record->name}" . ($record->is_track_stock ? " (Stok: " . number_format($record->stock, 0, ',', '.') . ")" : " (Non-Stok)"))
+                                    ->allowHtml()
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        $stock = number_format($record->stock, 0, ',', '.');
+                                        $dus = $record->isi > 0 ? floor($record->stock / $record->isi) : 0;
+                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Stok: {$stock})" : "(Non-Stok)";
+                                        
+                                        return "
+                                            <div>
+                                                <div class='font-medium text-sm'>{$record->sku} - {$record->name}</div>
+                                                <div class='text-xs opacity-70'>{$stockInfo}</div>
+                                            </div>
+                                        ";
+                                    })
                                     ->searchable(['name', 'sku'])
                                     ->nullable()
                                     // ->createOptionForm([

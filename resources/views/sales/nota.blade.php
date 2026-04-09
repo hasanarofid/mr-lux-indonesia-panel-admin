@@ -6,15 +6,15 @@
     <style>
         @page {
             size: A4;
-            margin: 10mm;
+            margin: 0;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             font-size: 11px;
-            color: #333;
+            color: #000;
             margin: 0;
-            padding: 0;
+            padding: 1.5cm 1cm;
             background: #fff;
         }
 
@@ -38,24 +38,24 @@
         .content-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
         }
 
         .content-table th {
-            background-color: #f5f5f5;
-            color: #333;
-            font-weight: 700;
+            color: #000;
+            font-weight: 800;
             text-transform: uppercase;
             font-size: 10px;
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
-            padding: 10px 8px;
+            border-top: 1.5px solid #000;
+            border-bottom: 1.5px solid #000;
+            padding: 6px 4px;
             text-align: left;
         }
 
         .content-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #eee;
+            padding: 6px 4px;
+            border-bottom: 0.5px solid #eee;
+            vertical-align: top;
         }
 
         .text-right { text-align: right !important; }
@@ -68,57 +68,59 @@
         }
 
         .summary-table {
-            width: 300px;
+            width: 250px;
             border-collapse: collapse;
         }
 
         .summary-table td {
-            padding: 5px 8px;
-            font-size: 12px;
+            padding: 3px 4px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .summary-label {
-            color: #666;
             text-align: right;
+            text-transform: uppercase;
         }
 
         .summary-value {
             text-align: right;
-            font-weight: 600;
-            width: 120px;
+            width: 100px;
         }
 
         .grand-total-row td {
-            border-top: 2px solid #d32f2f;
             color: #d32f2f;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            padding-top: 10px !important;
+            font-size: 13px !important;
+            font-weight: 900 !important;
+            padding-top: 8px !important;
         }
 
         .footer-section {
-            margin-top: 40px;
+            margin-top: 30px;
             display: flex;
             justify-content: space-between;
         }
 
         .signature-box {
             text-align: center;
-            width: 200px;
+            width: 150px;
         }
 
         .signature-space {
-            height: 60px;
+            height: 50px;
         }
 
         .signature-name {
-            font-weight: 700;
+            font-weight: 800;
             text-decoration: underline;
         }
 
         @media print {
             .no-print { display: none; }
-            body { padding: 30px; }
+            body { 
+                padding: 1cm; 
+                margin: 0;
+            }
         }
     </style>
 </head>
@@ -137,7 +139,7 @@
                 $sale->customer->billing_postcode,
                 $sale->customer->billing_country,
             ]);
-            $customerAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Alamat tidak tersedia';
+            $customerAddress = !empty($addressParts) ? implode(', ', $addressParts) : null;
         }
     @endphp
 
@@ -152,12 +154,12 @@
     <table class="content-table">
         <thead>
             <tr>
-                <th width="5%" class="text-center">No</th>
-                <th width="45%">Deskripsi Produk</th>
-                <th width="10%" class="text-center">Qty</th>
+                <th width="5%" class="text-center">NO</th>
+                <th width="45%">DESKRIPSI PRODUK</th>
+                <th width="10%" class="text-center">QTY</th>
                 <th width="10%" class="text-center">UOM</th>
-                <th width="15%" class="text-right">Harga Satuan</th>
-                <th width="15%" class="text-right">Subtotal</th>
+                <th width="15%" class="text-right">HARGA SATUAN</th>
+                <th width="15%" class="text-right">SUBTOTAL</th>
             </tr>
         </thead>
         <tbody>
@@ -204,19 +206,19 @@
             @endif
             <tr class="grand-total-row">
                 <td class="summary-label">TOTAL AKHIR</td>
-                <td class="summary-value" style="color: #d32f2f;">Rp {{ number_format((float)($sale->grand_total ?? 0), 0, ',', '.') }}</td>
+                <td class="summary-value">Rp {{ number_format((float)($sale->grand_total ?? 0), 0, ',', '.') }}</td>
             </tr>
         </table>
     </div>
 
     <div class="footer-section">
         <div class="signature-box">
-            <p>Hormat Kami,</p>
+            <p style="margin-bottom: 5px;">Hormat Kami,</p>
             <div class="signature-space"></div>
             <p class="signature-name">( MR LUX INDONESIA )</p>
         </div>
         <div class="signature-box">
-            <p>Penerima,</p>
+            <p style="margin-bottom: 5px;">Penerima,</p>
             <div class="signature-space"></div>
             <p class="signature-name">( {{ $sale->customer->name }} )</p>
         </div>

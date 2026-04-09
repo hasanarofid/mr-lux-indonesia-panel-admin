@@ -131,6 +131,19 @@ class AutomaticDeliveryNoteResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
                                     ->relationship('product', 'name')
+                                    ->allowHtml()
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        $stock = number_format($record->stock, 0, ',', '.');
+                                        $dus = $record->isi > 0 ? floor($record->stock / $record->isi) : 0;
+                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Stok: {$stock})" : "(Non-Stok)";
+                                        
+                                        return "
+                                            <div>
+                                                <div class='font-medium text-sm'>{$record->sku} - {$record->name}</div>
+                                                <div class='text-xs opacity-70'>{$stockInfo}</div>
+                                            </div>
+                                        ";
+                                    })
                                     ->nullable()
                                     ->searchable()
                                     ->live()

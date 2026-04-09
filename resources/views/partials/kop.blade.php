@@ -1,13 +1,13 @@
 <div class="header">
     <div class="kop-container">
-        <div class="company-section">
+        <div class="company-logo-section">
             <img src="{{ asset('images/logokopsurat.png') }}" alt="Logo" class="logo">
-            <div class="company-details">
-                <h1 class="company-name">MR LUX INDONESIA</h1>
-                <p class="company-address">Jln. Wr Supratman NO.31 Gisikdrono, Semarang Barat</p>
-                <p class="company-contact">Telp. (024) 7624836 | WhatsApp: +62 818 4520 14</p>
-                <p class="company-web">www.mrluxindonesia.com</p>
-            </div>
+        </div>
+        <div class="company-details-section">
+            <h1 class="company-name">MR LUX INDONESIA</h1>
+            <p class="company-address">Jln. Wr Supratman NO.31 Gisikdrono, Semarang Barat</p>
+            <p class="company-contact">Telp. (024) 7624836 | WhatsApp: +62 818 4520 14</p>
+            <p class="company-web">www.mrluxindonesia.com</p>
         </div>
         <div class="document-section">
             <h2 class="document-title">{{ $title ?? 'DOKUMEN' }}</h2>
@@ -33,124 +33,107 @@
     </div>
 
     <div class="customer-section">
-        <div class="customer-box">
-            <p class="box-label">Kepada Yth:</p>
-            <h3 class="customer-name">{{ $customerName }}</h3>
-            <p class="customer-address">{{ $customerAddress ?? 'Semarang, Jawa Tengah' }}</p>
+        <div class="customer-info">
+            <p class="kepada-label">KEPADA YTH:</p>
+            <h3 class="customer-name-display">{{ $customerName }}</h3>
+            <p class="customer-address-display">{{ $customerAddress ?? 'Semarang' }}</p>
         </div>
     </div>
 </div>
 
 <style>
-    :root {
-        --primary-color: #d32f2f;
-        --text-color: #333;
-        --border-color: #ddd;
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--text-color);
-        line-height: 1.4;
-    }
-
     .header {
-        margin-bottom: 20px;
+        margin-bottom: 25px;
     }
 
     .kop-container {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        border-bottom: 3px solid var(--primary-color);
-        padding-bottom: 15px;
+        align-items: center;
+        border-bottom: 2px solid #d32f2f;
+        padding-bottom: 10px;
         margin-bottom: 20px;
     }
 
-    .company-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
+    .company-logo-section {
+        flex: 1;
     }
 
     .logo {
-        height: 80px;
+        height: 70px;
         width: auto;
+    }
+
+    .company-details-section {
+        flex: 2;
+        text-align: center;
     }
 
     .company-name {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 800;
-        color: var(--primary-color);
-        letter-spacing: 1px;
+        color: #d32f2f;
+        letter-spacing: 0.5px;
     }
 
-    .company-details p {
-        margin: 2px 0;
-        font-size: 11px;
-        color: #666;
+    .company-address, .company-contact, .company-web {
+        margin: 1px 0;
+        font-size: 10.5px;
+        color: #000;
+        font-weight: 500;
     }
 
     .document-section {
+        flex: 1.5;
         text-align: right;
     }
 
     .document-title {
-        margin: 0 0 10px 0;
-        font-size: 20px;
-        font-weight: 700;
+        margin: 0 0 5px 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #000;
         text-transform: uppercase;
-        color: #222;
-        border-bottom: 1px solid var(--border-color);
-        display: inline-block;
-        padding-bottom: 5px;
     }
 
     .document-meta table {
         border-collapse: collapse;
-        display: inline-block;
+        float: right;
     }
 
     .document-meta td {
         border: none !important;
-        padding: 1px 5px !important;
-        font-size: 11px;
+        padding: 0 4px !important;
+        font-size: 10.5px;
         text-align: left;
+        color: #000;
+        font-weight: 500;
     }
 
     .customer-section {
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: flex-start;
+        margin-bottom: 15px;
     }
 
-    .customer-box {
-        border: 1px solid var(--border-color);
-        padding: 10px 15px;
-        min-width: 250px;
-        border-radius: 4px;
-        background-color: #fafafa;
-    }
-
-    .box-label {
-        margin: 0 0 5px 0;
-        font-size: 10px;
-        text-transform: uppercase;
-        color: #888;
-        font-weight: 600;
-    }
-
-    .customer-name {
+    .kepada-label {
         margin: 0;
-        font-size: 14px;
+        font-size: 10px;
         font-weight: 700;
-        color: #222;
+        color: #000;
     }
 
-    .customer-address {
-        margin: 3px 0 0 0;
+    .customer-name-display {
+        margin: 2px 0 0 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: #000;
+    }
+
+    .customer-address-display {
+        margin: 1px 0 0 0;
         font-size: 11px;
-        color: #555;
+        color: #333;
+        max-width: 400px;
+        line-height: 1.3;
     }
 </style>

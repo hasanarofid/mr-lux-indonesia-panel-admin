@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Surat Jalan - {{ $deliveryNote->number }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4 landscape;
@@ -10,7 +11,7 @@
         }
         
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Open Sans', sans-serif;
             font-size: 13px;
             color: #000;
             margin: 0;
@@ -97,6 +98,12 @@
             font-size: 14px;
             text-align: center;
             line-height: 1.1;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .font-bold, b, strong, .invoice-title, .meta-value, .customer-details {
+            font-size: 15px !important;
         }
 
         .company-details p {
@@ -165,10 +172,13 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
+            border-top: 1.5pt solid #000;
         }
 
         .content-table th {
-            border: 1px solid #000;
+            border-bottom: 1pt solid #000;
+            border-left: 1pt solid #000;
+            border-right: 1pt solid #000;
             padding: 6px 4px;
             text-align: center;
             text-transform: uppercase;
@@ -177,15 +187,15 @@
         }
 
         .content-table td {
-            border-left: 1px solid #000;
-            border-right: 1px solid #000;
+            border-left: 1pt solid #000;
+            border-right: 1pt solid #000;
             padding: 4px 6px;
             vertical-align: top;
             font-size: 12px;
         }
 
         .content-table tr:last-child td {
-            border-bottom: 1px solid #000;
+            border-bottom: 1pt solid #000;
         }
 
         /* Footer / Summary Box */
@@ -366,7 +376,7 @@
                 </tr>
                 @endforeach
                 {{-- Fill empty rows to maintain box height --}}
-                @for($i = count($deliveryNote->items); $i < 4; $i++)
+                @for($i = $deliveryNote->items->count(); $i < 4; $i++)
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>

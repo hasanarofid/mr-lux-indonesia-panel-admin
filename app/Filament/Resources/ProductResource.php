@@ -169,7 +169,8 @@ class ProductResource extends Resource
                     ->getStateUsing(fn (Product $record) => $record->isi > 0 ? floor($record->stock / $record->isi) : 0)
                     ->numeric(decimalPlaces: 0),
                 Tables\Columns\TextColumn::make('stock')
-                    ->label('Stok')
+                    ->label('Set/Pcs')
+                    ->getStateUsing(fn (Product $record) => $record->isi > 0 ? $record->stock % $record->isi : $record->stock)
                     ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')

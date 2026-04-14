@@ -80,29 +80,23 @@
 
         .company-info {
             display: flex;
-            gap: 15px;
+            gap: 5px;
             align-items: center;
         }
 
         .logo-box {
-            background: #ff0000;
-            color: #fff;
-            border-radius: 50%;
-            width: 80px;
-            height: 50px;
+            width: 180px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 14px;
-            text-align: center;
-            line-height: 1.1;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            justify-content: flex-start;
         }
 
-        .font-bold, b, strong, .invoice-title, .meta-value, .customer-details, .total-label, .total-value {
+        .logo-box img {
+            width: 100%;
+            height: auto;
+        }
+
+        .font-bold, b, strong, .invoice-title, .meta-value, .total-label, .total-value {
             font-size: 15px !important;
         }
 
@@ -114,21 +108,25 @@
 
         .title-meta {
             text-align: right;
-            width: 40%;
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
         }
 
         .invoice-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            margin: 0 0 10px 0;
-            text-transform: uppercase;
+            margin: 0 100px 10px 0; /* Move title more to the left/center */
+            text-transform: capitalize;
         }
 
         .meta-box {
-            border: 1px solid #000;
+            border: 1.5pt solid #000;
             display: inline-flex;
             text-align: left;
-            width: 100%;
+            width: 320px;
         }
 
         .meta-item {
@@ -152,6 +150,13 @@
             font-size: 12px;
         }
 
+        /* Border line under header */
+        .header-separator {
+            border-bottom: 2pt solid #000;
+            margin-bottom: 10px;
+            margin-top: -10px;
+        }
+
         /* Customer Section */
         .customer-section {
             margin-bottom: 15px;
@@ -163,8 +168,16 @@
         }
 
         .customer-details {
+            font-weight: normal;
+            line-height: 1.3;
+            font-size: 12px !important;
+        }
+
+        .customer-name {
             font-weight: bold;
-            line-height: 1.4;
+            font-size: 14px !important;
+            display: block;
+            margin-bottom: 2px;
         }
 
         /* Table Styling */
@@ -302,7 +315,7 @@
         <div class="header-section">
             <div class="company-info">
                 <div class="logo-box">
-                    MR<br>LUX
+                    <img src="{{ asset('images/logokopsurat.png') }}" alt="Lux Indonesia">
                 </div>
                 <div class="company-details">
                     <p style="font-weight: bold; font-size: 12px;">www.mrluxindonesia.com</p>
@@ -324,12 +337,13 @@
                 </div>
             </div>
         </div>
+        <div class="header-separator"></div>
 
         <!-- Customer -->
         <div class="customer-section">
             <div class="kepada">Kepada :</div>
             <div class="customer-details">
-                {{ $sale->customer->name }}<br>
+                <span class="customer-name">{{ $sale->customer->name }}</span>
                 @php
                     $customerAddress = $sale->customer->address;
                     if (empty($customerAddress)) {
@@ -363,7 +377,7 @@
                     <td class="text-center">{{ $item->unit ?? ($item->product?->uom ?? 'Set') }}</td>
                     <td>{{ $item->product ? $item->product->name : ($item->description ?? '-') }}</td>
                     <td class="text-right">{{ number_format((float)($item->price ?? 0), 0, ',', '.') }}</td>
-                    <td class="text-center">0</td>
+                    <td class="text-right">{{ number_format((float)($item->discount_item ?? 0), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format((float)($item->subtotal ?? 0), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach

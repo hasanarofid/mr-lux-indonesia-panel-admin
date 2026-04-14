@@ -80,29 +80,23 @@
 
         .company-info {
             display: flex;
-            gap: 15px;
+            gap: 5px;
             align-items: center;
         }
 
         .logo-box {
-            background: #ff0000;
-            color: #fff;
-            border-radius: 50%;
-            width: 80px;
-            height: 50px;
+            width: 180px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 14px;
-            text-align: center;
-            line-height: 1.1;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            justify-content: flex-start;
         }
 
-        .font-bold, b, strong, .invoice-title, .meta-value, .customer-details {
+        .logo-box img {
+            width: 100%;
+            height: auto;
+        }
+
+        .font-bold, b, strong, .invoice-title, .meta-value, .total-label, .total-value {
             font-size: 15px !important;
         }
 
@@ -152,6 +146,13 @@
             font-size: 12px;
         }
 
+        /* Border line under header */
+        .header-separator {
+            border-bottom: 2pt solid #000;
+            margin-bottom: 10px;
+            margin-top: -10px;
+        }
+
         /* Customer Section */
         .customer-section {
             margin-bottom: 15px;
@@ -163,8 +164,16 @@
         }
 
         .customer-details {
+            font-weight: normal;
+            line-height: 1.3;
+            font-size: 12px !important;
+        }
+
+        .customer-name {
             font-weight: bold;
-            line-height: 1.4;
+            font-size: 14px !important;
+            display: block;
+            margin-bottom: 2px;
         }
 
         /* Table Styling */
@@ -296,7 +305,7 @@
         <div class="header-section">
             <div class="company-info">
                 <div class="logo-box">
-                    MR<br>LUX
+                    <img src="{{ asset('images/logokopsurat.png') }}" alt="Lux Indonesia">
                 </div>
                 <div class="company-details">
                     <p style="font-weight: bold; font-size: 12px;">www.mrluxindonesia.com</p>
@@ -330,12 +339,13 @@
                 </div>
             </div>
         </div>
+        <div class="header-separator"></div>
 
         <!-- Customer -->
         <div class="customer-section">
             <div class="kepada">Kepada :</div>
             <div class="customer-details">
-                {{ $customer?->name ?? 'Pelanggan Umum' }}<br>
+                <span class="customer-name">{{ $customer?->name ?? 'Pelanggan Umum' }}</span>
                 {{ $customerAddress }}
             </div>
         </div>

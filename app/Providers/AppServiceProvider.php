@@ -24,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\StockEntryItem::observe(\App\Observers\StockEntryItemObserver::class);
         \App\Models\SaleItem::observe(\App\Observers\SaleItemObserver::class);
         \App\Models\PurchaseItem::observe(\App\Observers\PurchaseItemObserver::class);
+        \App\Models\WarehousePickupItem::observe(\App\Observers\WarehousePickupItemObserver::class);
         if (app()->environment('production') || env('APP_ENV') === 'production') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }

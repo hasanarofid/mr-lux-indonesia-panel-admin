@@ -41,25 +41,52 @@ class WarehousePickupResource extends Resource
                             ->required()
                             ->default(now())
                             ->native(false),
+                        Forms\Components\Select::make('type')
+                            ->label('Jenis')
+                            ->options([
+                                'invoice' => 'Invoice',
+                                'manual' => 'Barang Dibawa',
+                            ])
+                            ->default('manual')
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state === 'manual') {
+                                    $set('sale_id', null);
+                                }
+                            }),
+                        Forms\Components\Select::make('sale_id')
+                            ->label('Cari Invoice')
+                            ->relationship('sale', 'invoice_number')
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'invoice')
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $sale = \App\Models\Sale::with('items.product')->find($state);
+                                    if ($sale) {
+                                        $items = $sale->items->map(function ($item) {
+                                            return [
+                                                'product_id' => $item->product_id,
+                                                'unit' => $item->unit,
+                                                'quantity' => $item->quantity,
+                                                'returned_quantity' => 0,
+                                            ];
+                                        })->toArray();
+                                        $set('items', $items);
+                                        
+                                        // Also set driver name from customer if applicable or leave blank
+                                    }
+                                }
+                            }),
                         Forms\Components\TextInput::make('driver_name')
                             ->label('Nama Sales / Sopir')
                             ->required(),
                         Forms\Components\TextInput::make('vehicle_number')
                             ->label('Plat Nomor'),
-                        Forms\Components\TextInput::make('address')
-                            ->label('Alamat / Tujuan'),
-                        Forms\Components\Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'picked_up' => 'Barang Dibawa',
-                                'returned' => 'Ada Pengembalian',
-                                'completed' => 'Selesai / Terjual Semua',
-                            ])
-                            ->default('picked_up')
-                            ->required()
-                            ->live(),
                         Forms\Components\Textarea::make('note')
-                            ->label('Alasan / Catatan')
+                            ->label('Alamat / Catatan')
                             ->required()
                             ->columnSpanFull(),
                     ])->columns(2),
@@ -94,8 +121,7 @@ class WarehousePickupResource extends Resource
                                     ->label('Jumlah Kembali')
                                     ->numeric()
                                     ->default(0)
-                                    ->visible(fn (Forms\Get $get) => $get('../../status') !== 'picked_up')
-                                    ->hint('Jumlah barang yang dikembalikan ke gudang'),
+                                    ->hint('Barang kembali ke produksi'),
                             ])->columns(4)
                     ])
             ]);
@@ -113,6 +139,23 @@ class WarehousePickupResource extends Resource
                     ->label('Tanggal')
                     ->date('d/m/Y')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Jenis')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'invoice' => 'info',
+                        'manual' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'invoice' => 'Invoice',
+                        'manual' => 'Barang Dibawa',
+                        default => $state,
+                    }),
+                Tables\Columns\TextColumn::make('sale.invoice_number')
+                    ->label('Invoice')
+                    ->placeholder('-')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('driver_name')
                     ->label('Sopir/Sales')
                     ->searchable()
@@ -120,32 +163,17 @@ class WarehousePickupResource extends Resource
                 Tables\Columns\TextColumn::make('vehicle_number')
                     ->label('Plat No')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'picked_up' => 'warning',
-                        'returned' => 'info',
-                        'completed' => 'success',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'picked_up' => 'Barang Dibawa',
-                        'returned' => 'Ada Pengembalian',
-                        'completed' => 'Selesai',
-                        default => $state,
-                    }),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Tanggal Input')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Jenis')
                     ->options([
-                        'picked_up' => 'Barang Dibawa',
-                        'returned' => 'Ada Pengembalian',
-                        'completed' => 'Selesai',
+                        'invoice' => 'Invoice',
+                        'manual' => 'Barang Dibawa',
                     ]),
             ])
             ->actions([

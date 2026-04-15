@@ -39,6 +39,8 @@ class WarehousePickup extends Model
     protected $fillable = [
         'number',
         'date',
+        'type',
+        'sale_id',
         'driver_name',
         'vehicle_number',
         'address',
@@ -53,6 +55,11 @@ class WarehousePickup extends Model
     public function items()
     {
         return $this->hasMany(WarehousePickupItem::class);
+    }
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
     }
 
     public function getActivitylogOptions(): LogOptions

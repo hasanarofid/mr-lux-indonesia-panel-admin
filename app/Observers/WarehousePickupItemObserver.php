@@ -66,4 +66,17 @@ class WarehousePickupItemObserver
             $product->decrement('stock', (float) $item->returned_quantity);
         }
     }
+
+    /**
+     * Handle the WarehousePickupItem "restored" event.
+     */
+    public function restored(WarehousePickupItem $item): void
+    {
+        $product = Product::withTrashed()->find($item->product_id);
+        if ($product && $product->is_track_stock) {
+            // Deduct again
+            $product->decrement('stock', (float) $item->quantity);
+            $product->increment('stock', (float) $item->returned_quantity);
+        }
+    }
 }

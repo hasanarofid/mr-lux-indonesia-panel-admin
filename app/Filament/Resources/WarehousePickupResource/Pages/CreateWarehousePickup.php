@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateWarehousePickup extends CreateRecord
 {
     protected static string $resource = WarehousePickupResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

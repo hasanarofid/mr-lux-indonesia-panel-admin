@@ -20,6 +20,7 @@ class ActivityResource extends BaseActivityResource
                     \App\Models\StockEntry::class => ['items.product'],
                     \App\Models\Purchase::class => ['items.product'],
                     \App\Models\DeliveryNote::class => ['items.product'],
+                    \App\Models\WarehousePickup::class => ['items.product'],
                 ]);
             }
         ]);
@@ -35,6 +36,7 @@ class ActivityResource extends BaseActivityResource
                     \App\Models\StockEntry::class => ['items.product'],
                     \App\Models\Purchase::class => ['items.product'],
                     \App\Models\DeliveryNote::class => ['items.product'],
+                    \App\Models\WarehousePickup::class => ['items.product'],
                 ]);
             }
         ]);
@@ -76,6 +78,10 @@ class ActivityResource extends BaseActivityResource
                 $typeName = $subject->type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
             }
 
+            if ($record->subject_type === \App\Models\WarehousePickup::class) {
+                $typeName = 'Pengambilan Gudang';
+            }
+
             $summary = static::getItemSummary($record);
 
             return "{$typeName} {$name}{$summary}";
@@ -112,6 +118,10 @@ class ActivityResource extends BaseActivityResource
         if ($record->subject_type === \App\Models\DeliveryNote::class) {
             $type = $attributes['type'] ?? null;
             $typeName = $type === 'MANUAL' ? 'SJ Manual' : 'SJ Otomatis';
+        }
+
+        if ($record->subject_type === \App\Models\WarehousePickup::class) {
+            $typeName = 'Pengambilan Gudang';
         }
 
         $summary = static::getItemSummary($record);

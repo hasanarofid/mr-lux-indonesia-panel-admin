@@ -19,6 +19,11 @@ class ProductionReturn extends Model
         'is_represented_by_warehouse',
         'driver_name',
         'vehicle_number',
+        'epoxy',
+        'pu',
+        'non_sag_alifatik',
+        'lem_putih',
+        'alteco',
         'note',
     ];
 
@@ -30,11 +35,6 @@ class ProductionReturn extends Model
     public function warehousePickup()
     {
         return $this->belongsTo(WarehousePickup::class);
-    }
-
-    public function items()
-    {
-        return $this->hasMany(ProductionReturnItem::class);
     }
 
     public function getActivitylogOptions(): LogOptions

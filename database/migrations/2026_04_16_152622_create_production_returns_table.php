@@ -19,18 +19,14 @@ return new class extends Migration
             $table->boolean('is_represented_by_warehouse')->default(false);
             $table->string('driver_name')->nullable();
             $table->string('vehicle_number')->nullable();
+            $table->text('epoxy')->nullable();
+            $table->text('pu')->nullable();
+            $table->text('non_sag_alifatik')->nullable();
+            $table->text('lem_putih')->nullable();
+            $table->text('alteco')->nullable();
             $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();
-        });
-
-        Schema::create('production_return_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('production_return_id')->constrained('production_returns')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity');
-            $table->string('unit')->nullable();
-            $table->timestamps();
         });
     }
 
@@ -39,7 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('production_return_items');
         Schema::dropIfExists('production_returns');
     }
 };

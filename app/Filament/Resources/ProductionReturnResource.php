@@ -82,32 +82,31 @@ class ProductionReturnResource extends Resource
                     ])->columns(2),
 
                 Forms\Components\Section::make('Item Barang Retur')
+                    ->description('Isi catatan barang yang kembali untuk masing-masing kategori.')
                     ->schema([
-                        Forms\Components\Repeater::make('items')
-                            ->relationship()
+                        Forms\Components\Grid::make(5)
                             ->schema([
-                                Forms\Components\Select::make('product_id')
-                                    ->label('Produk')
-                                    ->relationship('product', 'name', fn (Builder $query) => $query->where('is_track_stock', true))
-                                    ->getOptionLabelFromRecordUsing(function ($record) {
-                                        $stock = number_format($record->stock, 0, ',', '.');
-                                        return "{$record->sku} - {$record->name} (Stok: {$stock})";
-                                    })
-                                    ->searchable(['name', 'sku'])
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit', Product::find($state)?->uom ?? 'PCS')),
-                                Forms\Components\TextInput::make('unit')
-                                    ->label('Satuan')
-                                    ->readOnly()
-                                    ->dehydrated(),
-                                Forms\Components\TextInput::make('quantity')
-                                    ->label('Jumlah Retur')
-                                    ->numeric()
-                                    ->required()
-                                    ->default(1)
-                                    ->minValue(1),
-                            ])->columns(3)
+                                Forms\Components\Textarea::make('epoxy')
+                                    ->label('Epoxy')
+                                    ->rows(10)
+                                    ->placeholder('Input manual...'),
+                                Forms\Components\Textarea::make('pu')
+                                    ->label('PU')
+                                    ->rows(10)
+                                    ->placeholder('Input manual...'),
+                                Forms\Components\Textarea::make('non_sag_alifatik')
+                                    ->label('Non Sag / Alifatik')
+                                    ->rows(10)
+                                    ->placeholder('Input manual...'),
+                                Forms\Components\Textarea::make('lem_putih')
+                                    ->label('Lem Putih')
+                                    ->rows(10)
+                                    ->placeholder('Input manual...'),
+                                Forms\Components\Textarea::make('alteco')
+                                    ->label('Alteco')
+                                    ->rows(10)
+                                    ->placeholder('Input manual...'),
+                            ]),
                     ])
             ]);
     }
@@ -137,6 +136,14 @@ class ProductionReturnResource extends Resource
                 Tables\Columns\IconColumn::make('is_represented_by_warehouse')
                     ->label('Gudang')
                     ->boolean(),
+                Tables\Columns\TextColumn::make('epoxy')
+                    ->label('Epoxy')
+                    ->limit(20)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('pu')
+                    ->label('PU')
+                    ->limit(20)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal Input')
                     ->dateTime('d/m/Y H:i')

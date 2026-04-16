@@ -2,7 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\WarehousePickupResource\Pages;
+use App\Filament\Resources\ProductionReturnResource\Pages;
+use App\Models\ProductionReturn;
 use App\Models\WarehousePickup;
 use App\Models\Product;
 use Filament\Forms;
@@ -11,87 +12,76 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Support\RawJs;
 
-class WarehousePickupResource extends Resource
+class ProductionReturnResource extends Resource
 {
-    protected static ?string $model = WarehousePickup::class;
+    protected static ?string $model = ProductionReturn::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
-    protected static ?string $navigationLabel = 'Pengambilan Gudang';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
+    protected static ?string $navigationLabel = 'Retur Produksi';
     protected static ?string $navigationGroup = 'Penjualan';
-    protected static ?int $navigationSort = 35;
-    protected static ?string $slug = 'pengambilan-gudang';
-    protected static ?string $modelLabel = 'Pengambilan Gudang';
-    protected static ?string $pluralModelLabel = 'Pengambilan Gudang';
+    protected static ?int $navigationSort = 36;
+    protected static ?string $slug = 'retur-produksi';
+    protected static ?string $modelLabel = 'Retur Produksi';
+    protected static ?string $pluralModelLabel = 'Retur Produksi';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Pengambilan')
+                Forms\Components\Section::make('Informasi Retur')
                     ->schema([
                         Forms\Components\TextInput::make('number')
-                            ->label('Nomor Dokumen')
-                            ->default('WHP/' . date('Ym') . '/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT))
+                            ->label('Nomor Retur')
+                            ->default(function () {
+                                $prefix = 'RE-PRD/' . date('Ym') . '/';
+                                $last = ProductionReturn::where('number', 'like', $prefix . '%')
+                                    ->orderBy('number', 'desc')
+                                    ->first();
+                                
+                                $nextNumber = $last ? (int) substr($last->number, -3) + 1 : 1;
+                                return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                            })
                             ->required()
                             ->unique(ignoreRecord: true),
                         Forms\Components\DatePicker::make('date')
-                            ->label('Tanggal')
+                            ->label('Tanggal Retur')
                             ->required()
                             ->default(now())
                             ->native(false),
-                        Forms\Components\Select::make('type')
-                            ->label('Jenis')
-                            ->options([
-                                'invoice' => 'Invoice',
-                                'manual' => 'Barang Dibawa',
-                            ])
-                            ->default('manual')
+                        Forms\Components\Select::make('warehouse_pickup_id')
+                            ->label('Nomor Pengambilan')
+                            ->relationship('warehousePickup', 'number')
+                            ->searchable()
+                            ->preload()
                             ->required()
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state === 'manual') {
-                                    $set('sale_id', null);
-                                }
-                            }),
-                        Forms\Components\Select::make('sale_id')
-                            ->label('Cari Invoice')
-                            ->relationship('sale', 'invoice_number')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'invoice')
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
                                 if ($state) {
-                                    $sale = \App\Models\Sale::with('items.product')->find($state);
-                                    if ($sale) {
-                                        $items = $sale->items->map(function ($item) {
-                                            return [
-                                                'product_id' => $item->product_id,
-                                                'unit' => $item->unit,
-                                                'quantity' => $item->quantity,
-                                                'returned_quantity' => 0,
-                                            ];
-                                        })->toArray();
-                                        $set('items', $items);
-                                        
-                                        // Also set driver name from customer if applicable or leave blank
+                                    $pickup = WarehousePickup::find($state);
+                                    if ($pickup) {
+                                        $set('driver_name', $pickup->driver_name);
+                                        $set('vehicle_number', $pickup->vehicle_number);
                                     }
                                 }
                             }),
+                        Forms\Components\Checkbox::make('is_represented_by_warehouse')
+                            ->label('Diwakilkan Gudang')
+                            ->columnSpan('full'),
                         Forms\Components\TextInput::make('driver_name')
                             ->label('Nama Sales / Sopir')
-                            ->required(),
+                            ->readOnly()
+                            ->dehydrated(),
                         Forms\Components\TextInput::make('vehicle_number')
-                            ->label('Plat Nomor'),
+                            ->label('Plat Nomor')
+                            ->readOnly()
+                            ->dehydrated(),
                         Forms\Components\Textarea::make('note')
-                            ->label('Alamat / Catatan')
-                            ->required()
+                            ->label('Catatan')
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Item Barang')
+                Forms\Components\Section::make('Item Barang Retur')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
@@ -112,7 +102,7 @@ class WarehousePickupResource extends Resource
                                     ->readOnly()
                                     ->dehydrated(),
                                 Forms\Components\TextInput::make('quantity')
-                                    ->label('Jumlah Diambil')
+                                    ->label('Jumlah Retur')
                                     ->numeric()
                                     ->required()
                                     ->default(1)
@@ -131,25 +121,11 @@ class WarehousePickupResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
-                    ->label('Tanggal')
+                    ->label('Tanggal Retur')
                     ->date('d/m/Y')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Jenis')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'invoice' => 'info',
-                        'manual' => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'invoice' => 'Invoice',
-                        'manual' => 'Barang Dibawa',
-                        default => $state,
-                    }),
-                Tables\Columns\TextColumn::make('sale.invoice_number')
-                    ->label('Invoice')
-                    ->placeholder('-')
+                Tables\Columns\TextColumn::make('warehousePickup.number')
+                    ->label('Ref. Pengambilan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('driver_name')
                     ->label('Sopir/Sales')
@@ -158,18 +134,18 @@ class WarehousePickupResource extends Resource
                 Tables\Columns\TextColumn::make('vehicle_number')
                     ->label('Plat No')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('is_represented_by_warehouse')
+                    ->label('Gudang')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal Input')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('Jenis')
-                    ->options([
-                        'invoice' => 'Invoice',
-                        'manual' => 'Barang Dibawa',
-                    ]),
+                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TernaryFilter::make('is_represented_by_warehouse')
+                    ->label('Diwakilkan Gudang'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -178,6 +154,8 @@ class WarehousePickupResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -186,9 +164,10 @@ class WarehousePickupResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWarehousePickups::route('/'),
-            'create' => Pages\CreateWarehousePickup::route('/create'),
-            'edit' => Pages\EditWarehousePickup::route('/{record}/edit'),
+            'index' => Pages\ListProductionReturns::route('/'),
+            'create' => Pages\CreateProductionReturn::route('/create'),
+            'view' => Pages\ViewProductionReturn::route('/{record}'),
+            'edit' => Pages\EditProductionReturn::route('/{record}/edit'),
         ];
     }
 }

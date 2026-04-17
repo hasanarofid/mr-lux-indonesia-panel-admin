@@ -108,21 +108,25 @@
 
         .title-meta {
             text-align: right;
-            width: 40%;
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
         }
 
         .invoice-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            margin: 0 0 10px 0;
+            margin: 0 100px 10px 0;
             text-transform: uppercase;
         }
 
         .meta-box {
-            border: 1px solid #000;
+            border: 1.5pt solid #000;
             display: inline-flex;
             text-align: left;
-            width: 100%;
+            width: 420px;
         }
 
         .meta-item {
@@ -143,7 +147,7 @@
 
         .meta-value {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         /* Border line under header */
@@ -157,6 +161,7 @@
         .customer-section {
             margin-bottom: 15px;
             font-size: 12px;
+            max-width: 400px;
         }
 
         .kepada {

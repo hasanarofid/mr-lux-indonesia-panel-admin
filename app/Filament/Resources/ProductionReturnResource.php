@@ -51,7 +51,7 @@ class ProductionReturnResource extends Resource
                             ->native(false),
                         Forms\Components\Select::make('warehouse_pickup_id')
                             ->label('Nomor Pengambilan')
-                            ->relationship('warehousePickup', 'number')
+                            ->relationship('warehousePickup', 'number', fn (Builder $query) => $query->where('type', 'manual'))
                             ->searchable()
                             ->preload()
                             ->required()

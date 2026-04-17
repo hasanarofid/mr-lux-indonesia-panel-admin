@@ -161,6 +161,7 @@
         .customer-section {
             margin-bottom: 15px;
             font-size: 12px;
+            max-width: 400px;
         }
 
         .kepada {

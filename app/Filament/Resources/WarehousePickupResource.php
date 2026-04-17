@@ -106,10 +106,15 @@ class WarehousePickupResource extends Resource
                                     ->searchable(['name', 'sku'])
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit', Product::find($state)?->uom ?? 'PCS')),
-                                Forms\Components\TextInput::make('unit')
+                                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit', strtoupper(Product::find($state)?->uom ?? 'PCS'))),
+                                Forms\Components\Select::make('unit')
                                     ->label('Satuan')
-                                    ->readOnly()
+                                    ->options([
+                                        'PCS' => 'PCS',
+                                        'SET' => 'SET',
+                                        'DUS' => 'DUS',
+                                    ])
+                                    ->required()
                                     ->dehydrated(),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah Diambil')

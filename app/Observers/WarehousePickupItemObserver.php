@@ -14,8 +14,7 @@ class WarehousePickupItemObserver
     {
         $product = $item->product;
         if ($product && $product->is_track_stock) {
-            $product->decrement('stock', (float) $item->quantity);
-            // returned_quantity doesn't add back to stock (goes to production)
+            $product->decrement('stock', $item->getConvertedQuantity());
         }
     }
 
@@ -24,26 +23,25 @@ class WarehousePickupItemObserver
      */
     public function updated(WarehousePickupItem $item): void
     {
-        if ($item->isDirty('product_id')) {
-            // Revert old product stock
-            $oldProduct = Product::withTrashed()->find($item->getOriginal('product_id'));
+        if ($item->isDirty(['product_id', 'quantity', 'unit'])) {
+            // Revert old product stock based on original values
+            $oldProductId = $item->getOriginal('product_id');
+            $oldProduct = Product::withTrashed()->find($oldProductId);
+            
             if ($oldProduct && $oldProduct->is_track_stock) {
-                $oldProduct->increment('stock', (float) $item->getOriginal('quantity'));
+                // Create temp item to calculate original converted quantity
+                $originalItem = clone $item;
+                $originalItem->product_id = $oldProductId;
+                $originalItem->quantity = $item->getOriginal('quantity');
+                $originalItem->unit = $item->getOriginal('unit');
+                
+                $oldProduct->increment('stock', $originalItem->getConvertedQuantity());
             }
 
-            // Apply to new product
+            // Apply to new product/quantity/unit
             $newProduct = $item->product;
             if ($newProduct && $newProduct->is_track_stock) {
-                $newProduct->decrement('stock', (float) $item->quantity);
-            }
-        } else {
-            $product = $item->product;
-            if ($product && $product->is_track_stock) {
-                // Calculate difference for quantity (taken)
-                $qtyDiff = (float) $item->quantity - (float) $item->getOriginal('quantity');
-                $product->decrement('stock', $qtyDiff);
-                
-                // returned_quantity changes don't affect stock
+                $newProduct->decrement('stock', $item->getConvertedQuantity());
             }
         }
     }
@@ -55,8 +53,7 @@ class WarehousePickupItemObserver
     {
         $product = Product::withTrashed()->find($item->product_id);
         if ($product && $product->is_track_stock) {
-            // Revert taken quantity only
-            $product->increment('stock', (float) $item->quantity);
+            $product->increment('stock', $item->getConvertedQuantity());
         }
     }
 

@@ -44,7 +44,6 @@ class CustomDeliveryNoteResource extends Resource
                             ->relationship('customer', 'name')
                             ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} - {$record->billing_city} ({$record->code})")
                             ->searchable(['name', 'billing_city', 'code'])
-                            ->required()
                             ->dehydrated()
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {

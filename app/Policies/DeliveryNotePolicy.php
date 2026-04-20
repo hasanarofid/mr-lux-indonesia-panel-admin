@@ -15,7 +15,9 @@ class DeliveryNotePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_delivery::note');
+        return $user->can('view_any_delivery_note') || 
+               $user->can('view_any_automatic::delivery::note') || 
+               $user->can('view_any_manual::delivery::note');
     }
 
     /**
@@ -23,7 +25,9 @@ class DeliveryNotePolicy
      */
     public function view(User $user, DeliveryNote $deliveryNote): bool
     {
-        return $user->can('view_delivery::note');
+        return $user->can('view_delivery_note') || 
+               $user->can('view_automatic::delivery::note') || 
+               $user->can('view_manual::delivery::note');
     }
 
     /**
@@ -31,7 +35,9 @@ class DeliveryNotePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_delivery::note');
+        return $user->can('create_delivery_note') || 
+               $user->can('create_automatic::delivery::note') || 
+               $user->can('create_manual::delivery::note');
     }
 
     /**
@@ -42,7 +48,11 @@ class DeliveryNotePolicy
         if ($deliveryNote->status === 'DELIVERED') {
             return false;
         }
-        return $user->can('update_delivery::note');
+
+        $resourcePrefix = $deliveryNote->type === 'AUTOMATIC' ? 'automatic' : 'manual';
+        
+        return $user->can('update_delivery_note') || 
+               $user->can("update_{$resourcePrefix}::delivery::note");
     }
 
     /**
@@ -53,7 +63,11 @@ class DeliveryNotePolicy
         if ($deliveryNote->status === 'DELIVERED') {
             return false;
         }
-        return $user->can('delete_delivery::note');
+
+        $resourcePrefix = $deliveryNote->type === 'AUTOMATIC' ? 'automatic' : 'manual';
+
+        return $user->can('delete_delivery_note') || 
+               $user->can("delete_{$resourcePrefix}::delivery::note");
     }
 
     /**
@@ -61,7 +75,9 @@ class DeliveryNotePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_delivery::note');
+        return $user->can('delete_any_delivery_note') || 
+               $user->can('delete_any_automatic::delivery::note') || 
+               $user->can('delete_any_manual::delivery::note');
     }
 
     /**
@@ -69,7 +85,10 @@ class DeliveryNotePolicy
      */
     public function forceDelete(User $user, DeliveryNote $deliveryNote): bool
     {
-        return $user->can('force_delete_delivery::note');
+        $resourcePrefix = $deliveryNote->type === 'AUTOMATIC' ? 'automatic' : 'manual';
+
+        return $user->can('force_delete_delivery_note') || 
+               $user->can("force_delete_{$resourcePrefix}::delivery::note");
     }
 
     /**
@@ -77,7 +96,9 @@ class DeliveryNotePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_delivery::note');
+        return $user->can('force_delete_any_delivery_note') || 
+               $user->can('force_delete_any_automatic::delivery::note') || 
+               $user->can('force_delete_any_manual::delivery::note');
     }
 
     /**
@@ -85,7 +106,10 @@ class DeliveryNotePolicy
      */
     public function restore(User $user, DeliveryNote $deliveryNote): bool
     {
-        return $user->can('restore_delivery::note');
+        $resourcePrefix = $deliveryNote->type === 'AUTOMATIC' ? 'automatic' : 'manual';
+
+        return $user->can('restore_delivery_note') || 
+               $user->can("restore_{$resourcePrefix}::delivery::note");
     }
 
     /**
@@ -93,7 +117,9 @@ class DeliveryNotePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_delivery::note');
+        return $user->can('restore_any_delivery_note') || 
+               $user->can('restore_any_automatic::delivery::note') || 
+               $user->can('restore_any_manual::delivery::note');
     }
 
     /**
@@ -101,7 +127,10 @@ class DeliveryNotePolicy
      */
     public function replicate(User $user, DeliveryNote $deliveryNote): bool
     {
-        return $user->can('replicate_delivery::note');
+        $resourcePrefix = $deliveryNote->type === 'AUTOMATIC' ? 'automatic' : 'manual';
+
+        return $user->can('replicate_delivery_note') || 
+               $user->can("replicate_{$resourcePrefix}::delivery::note");
     }
 
     /**
@@ -109,6 +138,8 @@ class DeliveryNotePolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_delivery::note');
+        return $user->can('reorder_delivery_note') || 
+               $user->can('reorder_automatic::delivery::note') || 
+               $user->can('reorder_manual::delivery::note');
     }
 }

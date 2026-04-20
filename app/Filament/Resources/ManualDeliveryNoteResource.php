@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ManualDeliveryNoteResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use App\Models\DeliveryNote;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -18,8 +19,19 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Filament\Notifications\Notification;
 
-class ManualDeliveryNoteResource extends Resource
+class ManualDeliveryNoteResource extends Resource implements HasShieldPermissions
 {
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view',
+            'view_any',
+            'create',
+            'update',
+            'delete',
+            'delete_any',
+        ];
+    }
     protected static ?string $model = DeliveryNote::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

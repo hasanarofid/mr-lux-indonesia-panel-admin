@@ -54,5 +54,8 @@ class DatabaseSeeder extends Seeder
 
         // Customers
         $this->call(CustomerSeeder::class);
+
+        // Specific Users
+        $this->call(SpecificUserSeeder::class);
     }
 }

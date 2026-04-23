@@ -18,7 +18,7 @@ class StockEntryItemObserver
 
         $type = $stockEntryItem->stockEntry->type;
 
-        if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+        if (in_array($type, ['MASUK', 'PRODUCTION', 'ADJUSTMENT'])) {
             $product->increment('stock', (float) $stockEntryItem->quantity);
         } elseif ($type === 'KELUAR') {
             $product->decrement('stock', (float) $stockEntryItem->quantity);
@@ -36,7 +36,7 @@ class StockEntryItemObserver
             // Revert old product
             $oldProduct = \App\Models\Product::withTrashed()->find($stockEntryItem->getOriginal('product_id'));
             if ($oldProduct && $oldProduct->is_track_stock) {
-                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                if (in_array($type, ['MASUK', 'PRODUCTION', 'ADJUSTMENT'])) {
                     $oldProduct->decrement('stock', (float) $stockEntryItem->getOriginal('quantity'));
                 } elseif ($type === 'KELUAR') {
                     $oldProduct->increment('stock', (float) $stockEntryItem->getOriginal('quantity'));
@@ -46,7 +46,7 @@ class StockEntryItemObserver
             // Apply to new product
             $newProduct = $stockEntryItem->product;
             if ($newProduct && $newProduct->is_track_stock) {
-                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                if (in_array($type, ['MASUK', 'PRODUCTION', 'ADJUSTMENT'])) {
                     $newProduct->increment('stock', (float) $stockEntryItem->quantity);
                 } elseif ($type === 'KELUAR') {
                     $newProduct->decrement('stock', (float) $stockEntryItem->quantity);
@@ -56,7 +56,7 @@ class StockEntryItemObserver
             $product = $stockEntryItem->product;
             if ($product && $product->is_track_stock) {
                 $difference = (float) $stockEntryItem->quantity - (float) $stockEntryItem->getOriginal('quantity');
-                if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+                if (in_array($type, ['MASUK', 'PRODUCTION', 'ADJUSTMENT'])) {
                     $product->increment('stock', $difference);
                 } elseif ($type === 'KELUAR') {
                     $product->decrement('stock', $difference);
@@ -73,7 +73,7 @@ class StockEntryItemObserver
         $product = \App\Models\Product::withTrashed()->find($stockEntryItem->product_id);
         if ($product && $product->is_track_stock) {
             $type = $stockEntryItem->stockEntry->type;
-            if (in_array($type, ['MASUK', 'PRODUCTION'])) {
+            if (in_array($type, ['MASUK', 'PRODUCTION', 'ADJUSTMENT'])) {
                 $product->decrement('stock', (float) $stockEntryItem->quantity);
             } elseif ($type === 'KELUAR') {
                 $product->increment('stock', (float) $stockEntryItem->quantity);

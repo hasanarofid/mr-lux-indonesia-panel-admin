@@ -63,7 +63,8 @@ class StockEntryResource extends Resource
                                     ->getOptionLabelFromRecordUsing(function ($record) {
                                         $stock = number_format($record->stock, 0, ',', '.');
                                         $dus = $record->isi > 0 ? floor($record->stock / $record->isi) : 0;
-                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Stok: {$stock})" : "(Non-Stok)";
+                                        $pcs = $record->isi > 0 ? $record->stock % $record->isi : $record->stock;
+                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Pcs: {$pcs} Total: {$stock})" : "(Non-Stok)";
                                         
                                         return "
                                             <div>
@@ -96,7 +97,6 @@ class StockEntryResource extends Resource
                                     }),
                                 Forms\Components\TextInput::make('quantity_carton')
                                     ->label('Jumlah Dus')
-                                    ->required()
                                     ->default(0)
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
@@ -106,7 +106,6 @@ class StockEntryResource extends Resource
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotalQuantity($get, $set)),
                                 Forms\Components\TextInput::make('quantity_unit')
                                     ->label('Jumlah Pcs')
-                                    ->required()
                                     ->default(0)
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                     ->stripCharacters('.')
@@ -123,7 +122,15 @@ class StockEntryResource extends Resource
                                     ->extraAttributes(['class' => 'bg-gray-100']),
                             ])
                             ->columns(6)
-                            ->itemLabel(fn (array $state): ?string => (\App\Models\Product::find($state['product_id'])?->name ?? 'Item') . ' (' . ($state['quantity'] ?? 0) . ' pcs)'),
+                            ->itemLabel(function (array $state) {
+                                $product = \App\Models\Product::find($state['product_id']);
+                                $name = $product?->name ?? 'Item';
+                                $cartons = $state['quantity_carton'] ?? 0;
+                                $units = $state['quantity_unit'] ?? 0;
+                                $total = number_format((float)($state['quantity'] ?? 0), 0, ',', '.');
+                                $uom = $product?->uom ?? 'PCS';
+                                return "{$name} ({$cartons} Dus, {$units} {$uom} - Total: {$total})";
+                            }),
                     ]),
             ]);
     }

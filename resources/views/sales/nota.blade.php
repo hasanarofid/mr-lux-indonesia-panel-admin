@@ -255,6 +255,27 @@
             font-size: 16px;
         }
 
+        /* Summary Details */
+        .summary-details {
+            margin-bottom: 8px;
+            padding: 0 12px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .summary-label {
+            color: #4b5563;
+        }
+
+        .summary-value {
+            font-weight: bold;
+        }
+
         /* Signature */
         .signature-section {
             margin-top: 30px;
@@ -402,6 +423,32 @@
                 {{-- Placeholder for notes if any --}}
             </div>
             <div class="total-container">
+                @if(($sale->discount_invoice ?? 0) > 0 || ($sale->shipping_cost ?? 0) > 0 || ($sale->ppn_amount ?? 0) > 0)
+                <div class="summary-details">
+                    <div class="summary-row">
+                        <span class="summary-label">Subtotal</span>
+                        <span class="summary-value">{{ number_format((float)($sale->subtotal ?? 0), 0, ',', '.') }}</span>
+                    </div>
+                    @if(($sale->discount_invoice ?? 0) > 0)
+                    <div class="summary-row">
+                        <span class="summary-label">Diskon</span>
+                        <span class="summary-value">-{{ number_format((float)($sale->discount_invoice ?? 0), 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @if(($sale->ppn_amount ?? 0) > 0)
+                    <div class="summary-row">
+                        <span class="summary-label">PPN</span>
+                        <span class="summary-value">{{ number_format((float)($sale->ppn_amount ?? 0), 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @if(($sale->shipping_cost ?? 0) > 0)
+                    <div class="summary-row">
+                        <span class="summary-label">Ongkos Kirim</span>
+                        <span class="summary-value">{{ number_format((float)($sale->shipping_cost ?? 0), 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                </div>
+                @endif
                 <div class="total-box">
                     <div class="total-label">Total</div>
                     <div class="total-value">{{ number_format((float)($sale->grand_total ?? 0), 0, ',', '.') }}</div>

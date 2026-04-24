@@ -92,12 +92,12 @@ class SaleResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produk')
-                                    ->relationship('product', 'name', fn (Builder $query) => $query->where('stock', '>', 0)->orWhere('is_track_stock', false))
+                                    ->relationship('product', 'name')
                                     ->allowHtml()
                                     ->getOptionLabelFromRecordUsing(function ($record) {
                                         $stock = number_format($record->stock, 0, ',', '.');
                                         $dus = $record->isi > 0 ? floor($record->stock / $record->isi) : 0;
-                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Stok: {$stock})" : "(Non-Stok)";
+                                        $stockInfo = "";
                                         
                                         return "
                                             <div>
@@ -135,15 +135,7 @@ class SaleResource extends Resource
                                     //         ->numeric()
                                     //         ->required(),
                                     // ])
-                                    ->rules([
-                                        fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) {
-                                            if (!$value) return;
-                                            $product = \App\Models\Product::find($value);
-                                            if ($product && $product->is_track_stock && $product->stock <= 0) {
-                                                $fail("Stok produk ini sedang kosong.");
-                                            }
-                                        },
-                                    ])
+
                                     ->live()
                                     ->columnSpan(3)
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {

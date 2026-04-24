@@ -101,7 +101,9 @@ class WarehousePickupResource extends Resource
                                     ->relationship('product', 'name', fn (Builder $query) => $query->where('is_track_stock', true))
                                     ->getOptionLabelFromRecordUsing(function ($record) {
                                         $stock = number_format($record->stock, 0, ',', '.');
-                                        return "{$record->sku} - {$record->name} (Stok: {$stock})";
+                                        $dus = $record->isi > 0 ? floor($record->stock / $record->isi) : 0;
+                                        $stockInfo = $record->is_track_stock ? "(Dus: {$dus} Stok: {$stock})" : "(Non-Stok)";
+                                        return "{$record->sku} - {$record->name} {$stockInfo}";
                                     })
                                     ->searchable(['name', 'sku'])
                                     ->required()
@@ -121,7 +123,31 @@ class WarehousePickupResource extends Resource
                                     ->numeric()
                                     ->required()
                                     ->default(1)
-                                    ->minValue(1),
+                                    ->minValue(1)
+                                    ->rules([
+                                        fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $productId = $get('product_id');
+                                            if (!$productId || !$value) return;
+
+                                            $product = \App\Models\Product::find($productId);
+                                            if (!$product || !$product->is_track_stock) return;
+
+                                            $unit = $get('unit');
+                                            $quantity = (float) $value;
+                                            
+                                            $convertedQuantity = $quantity;
+                                            if (strtoupper($unit ?? '') === 'DUS') {
+                                                $convertedQuantity *= ($product->isi ?: 1);
+                                            } elseif (strtoupper($unit ?? '') === 'SET') {
+                                                $convertedQuantity *= ($product->isi_set ?: 1);
+                                            }
+
+                                            if ($convertedQuantity > $product->stock) {
+                                                $formattedStock = number_format($product->stock, 0, ',', '.');
+                                                $fail("Stok tidak mencukupi. Tersedia: {$formattedStock} Pcs.");
+                                            }
+                                        },
+                                    ]),
                             ])->columns(3)
                     ])
             ]);

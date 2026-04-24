@@ -39,6 +39,10 @@ class SalePolicy
      */
     public function update(User $user, Sale $sale): bool
     {
+        if ($user->hasRole('kasir')) {
+            return true;
+        }
+
         return $user->can('update_sale') && $sale->status !== 'Lunas';
     }
 

@@ -385,8 +385,8 @@
                         $displayText = number_format($qty, 0, ',', '.') . ' ' . $uom;
                     }
 
-                    $keterangan = '';
-                    if ($item->product_id) {
+                    $keterangan = $item->note ?? '';
+                    if (empty($keterangan) && $item->product_id) {
                         if ($item->description && $item->description !== $item->product?->name) {
                             $keterangan = $item->description;
                         }

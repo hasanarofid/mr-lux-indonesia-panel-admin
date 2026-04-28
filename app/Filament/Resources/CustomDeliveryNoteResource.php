@@ -101,6 +101,10 @@ class CustomDeliveryNoteResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpan(['md' => 4]),
+                                Forms\Components\TextInput::make('note')
+                                    ->label('Keterangan')
+                                    ->maxLength(255)
+                                    ->columnSpan(['md' => 4]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
                                     ->required()
@@ -115,7 +119,7 @@ class CustomDeliveryNoteResource extends Resource
                                     ->dehydrated()
                                     ->columnSpan(['md' => 2]),
                             ])
-                            ->columns(8)
+                            ->columns(12)
                             ->defaultItems(1)
                             ->reorderable(false),
                     ]),

@@ -212,6 +212,7 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->live()
                                     ->extraInputAttributes(['onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46'])
+                                    ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? 0 : (float) $state)
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $price = self::parseNumber($get('price') ?? 0);
                                         $qty = self::parseNumber($get('quantity') ?? 1);
@@ -276,6 +277,7 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->live()
                                     ->extraInputAttributes(['onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46'])
+                                    ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? 0 : (float) $state)
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $subtotal = self::parseNumber($get('subtotal') ?? 0);
                                         $discountNominal = round($subtotal * (self::parseNumber($state) / 100));

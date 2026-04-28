@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Jalan - {{ $deliveryNote->number }}</title>
+    <title>Pengambilan Gudang - {{ $warehousePickup->number }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     <style>
         @page {
@@ -272,13 +272,13 @@
 </head>
 <body>
     @php
-        $customer = $deliveryNote->sale?->customer ?? $deliveryNote->customer;
-        $customerAddress = $deliveryNote->address;
+        $customer = $warehousePickup->sale?->customer ?? $warehousePickup->customer;
+        $customerAddress = $warehousePickup->address;
         
         if (empty($customerAddress)) {
             // Fallback for Manual SJ which might have many-to-many customers
-            if (!$customer && $deliveryNote->customers()->exists()) {
-                $customer = $deliveryNote->customers()->first();
+            if (!$customer && $warehousePickup->customers()->exists()) {
+                $customer = $warehousePickup->customers()->first();
             }
 
             if ($customer) {
@@ -294,7 +294,7 @@
     @endphp
 
     <div class="no-print">
-        <button onclick="window.print()">Cetak Surat Jalan</button>
+        <button onclick="window.print()">Cetak Pengambilan Gudang</button>
     </div>
 
     <div class="form-wrapper">
@@ -319,26 +319,26 @@
                 </div>
             </div>
             <div class="title-meta">
-                <h1 class="invoice-title">Surat Jalan</h1>
+                <h1 class="invoice-title">Pengambilan Gudang</h1>
                 <div class="meta-box">
                     <div class="meta-item">
                         <div class="meta-label">Tanggal</div>
-                        <div class="meta-value">{{ \Carbon\Carbon::parse($deliveryNote->date)->format('d M Y') }}</div>
+                        <div class="meta-value">{{ \Carbon\Carbon::parse($warehousePickup->date)->format('d M Y') }}</div>
                     </div>
                     <div class="meta-item">
                         <div class="meta-label">Nomor</div>
-                        <div class="meta-value">{{ $deliveryNote->number }}</div>
+                        <div class="meta-value">{{ $warehousePickup->number }}</div>
                     </div>
-                    @if($deliveryNote->driver_name)
+                    @if($warehousePickup->driver_name)
                     <div class="meta-item">
                         <div class="meta-label">Sopir</div>
-                        <div class="meta-value">{{ $deliveryNote->driver_name }}</div>
+                        <div class="meta-value">{{ $warehousePickup->driver_name }}</div>
                     </div>
                     @endif
-                    @if($deliveryNote->vehicle_number)
+                    @if($warehousePickup->vehicle_number)
                     <div class="meta-item">
                         <div class="meta-label">No. Kendaraan</div>
-                        <div class="meta-value">{{ $deliveryNote->vehicle_number }}</div>
+                        <div class="meta-value">{{ $warehousePickup->vehicle_number }}</div>
                     </div>
                     @endif
                 </div>
@@ -366,7 +366,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($deliveryNote->items as $item)
+                @foreach($warehousePickup->items as $item)
                 @php
                     $qty = $item->quantity;
                     $isi = $item->product?->isi ?? 0;
@@ -400,7 +400,7 @@
                 </tr>
                 @endforeach
                 {{-- Fill empty rows to maintain box height --}}
-                @for($i = $deliveryNote->items->count(); $i < 4; $i++)
+                @for($i = $warehousePickup->items->count(); $i < 4; $i++)
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>

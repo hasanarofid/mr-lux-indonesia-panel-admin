@@ -203,6 +203,11 @@ class WarehousePickupResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('print')
+                    ->label('Cetak')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn ($record) => route('warehouse-pickups.print', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

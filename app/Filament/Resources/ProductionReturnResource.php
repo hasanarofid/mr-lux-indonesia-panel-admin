@@ -18,12 +18,12 @@ class ProductionReturnResource extends Resource
     protected static ?string $model = ProductionReturn::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
-    protected static ?string $navigationLabel = 'Retur Produksi';
+    protected static ?string $navigationLabel = 'Retur Sales';
     protected static ?string $navigationGroup = 'Penjualan';
     protected static ?int $navigationSort = 36;
     protected static ?string $slug = 'retur-produksi';
-    protected static ?string $modelLabel = 'Retur Produksi';
-    protected static ?string $pluralModelLabel = 'Retur Produksi';
+    protected static ?string $modelLabel = 'Retur Sales';
+    protected static ?string $pluralModelLabel = 'Retur Sales';
 
     public static function form(Form $form): Form
     {

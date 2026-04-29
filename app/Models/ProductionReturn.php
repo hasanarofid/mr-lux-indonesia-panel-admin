@@ -43,6 +43,6 @@ class ProductionReturn extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => "Retur Produksi {$eventName} by " . (Auth::user()?->name ?? 'System'));
+            ->setDescriptionForEvent(fn(string $eventName) => "Retur Sales {$eventName} by " . (Auth::user()?->name ?? 'System'));
     }
 }

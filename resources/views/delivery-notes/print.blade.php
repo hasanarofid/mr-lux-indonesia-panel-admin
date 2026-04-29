@@ -373,16 +373,18 @@
                     $uom = $item->unit ?? $item->product?->uom ?? 'PCS';
                     
                     $displayText = '';
-                    if ($item->product && $isi > 0 && $qty >= $isi) {
-                        $dus = floor($qty / $isi);
-                        $sisa = $qty % $isi;
-                        
-                        $displayText = $dus . ' DUS';
-                        if ($sisa > 0) {
-                            $displayText .= ' ' . $sisa . ' ' . $uom;
+                    if ($qty !== null && $qty > 0) {
+                        if ($item->product && $isi > 0 && $qty >= $isi) {
+                            $dus = floor($qty / $isi);
+                            $sisa = $qty % $isi;
+                            
+                            $displayText = $dus . ' DUS';
+                            if ($sisa > 0) {
+                                $displayText .= ' ' . $sisa . ' ' . $uom;
+                            }
+                        } else {
+                            $displayText = number_format($qty, 0, ',', '.') . ' ' . $uom;
                         }
-                    } else {
-                        $displayText = number_format($qty, 0, ',', '.') . ' ' . $uom;
                     }
 
                     $keterangan = $item->note ?? '';

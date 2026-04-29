@@ -21,6 +21,7 @@ class ActivityResource extends BaseActivityResource
                     \App\Models\Purchase::class => ['items.product'],
                     \App\Models\DeliveryNote::class => ['items.product'],
                     \App\Models\WarehousePickup::class => ['items.product'],
+                    \App\Models\WarehouseReturn::class => ['items.product'],
                 ]);
             }
         ]);
@@ -37,6 +38,7 @@ class ActivityResource extends BaseActivityResource
                     \App\Models\Purchase::class => ['items.product'],
                     \App\Models\DeliveryNote::class => ['items.product'],
                     \App\Models\WarehousePickup::class => ['items.product'],
+                    \App\Models\WarehouseReturn::class => ['items.product'],
                 ]);
             }
         ]);
@@ -54,6 +56,7 @@ class ActivityResource extends BaseActivityResource
         if ($subject) {
             $name = match (true) {
                 isset($subject->invoice_number) => $subject->invoice_number,
+                isset($subject->return_number) => $subject->return_number,
                 isset($subject->number) => $subject->number,
                 isset($subject->name) => $subject->name,
                 isset($subject->supplier_name) => $subject->supplier_name,
@@ -82,6 +85,10 @@ class ActivityResource extends BaseActivityResource
                 $typeName = 'Pengambilan Gudang';
             }
 
+            if ($record->subject_type === \App\Models\WarehouseReturn::class) {
+                $typeName = 'Retur Gudang';
+            }
+
             $summary = static::getItemSummary($record);
 
             return "{$typeName} {$name}{$summary}";
@@ -93,6 +100,7 @@ class ActivityResource extends BaseActivityResource
         
         $name = match (true) {
             isset($attributes['invoice_number']) => $attributes['invoice_number'],
+            isset($attributes['return_number']) => $attributes['return_number'],
             isset($attributes['number']) => $attributes['number'],
             isset($attributes['name']) => $attributes['name'],
             isset($attributes['supplier_name']) => $attributes['supplier_name'],
@@ -122,6 +130,10 @@ class ActivityResource extends BaseActivityResource
 
         if ($record->subject_type === \App\Models\WarehousePickup::class) {
             $typeName = 'Pengambilan Gudang';
+        }
+
+        if ($record->subject_type === \App\Models\WarehouseReturn::class) {
+            $typeName = 'Retur Gudang';
         }
 
         $summary = static::getItemSummary($record);

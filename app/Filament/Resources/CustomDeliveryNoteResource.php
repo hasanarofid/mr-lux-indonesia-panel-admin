@@ -107,15 +107,15 @@ class CustomDeliveryNoteResource extends Resource
                                     ->columnSpan(['md' => 4]),
                                 Forms\Components\TextInput::make('unit')
                                     ->label('Satuan')
-                                    ->required()
+                                    ->nullable()
                                     ->dehydrated()
                                     ->columnSpan(['md' => 2]),
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Jumlah')
-                                    ->required()
+                                    ->nullable()
                                     ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
-                                    ->formatStateUsing(fn ($state) => number_format((float) ($state ?? 0), 0, ',', '.'))
-                                    ->dehydrateStateUsing(fn ($state) => (float) str_replace('.', '', $state))
+                                    ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 0, ',', '.') : null)
+                                    ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? null : (float) str_replace('.', '', $state))
                                     ->dehydrated()
                                     ->columnSpan(['md' => 2]),
                             ])

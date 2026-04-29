@@ -14,7 +14,7 @@ class WarehouseReturnItemObserver
         $product = $item->product;
 
         if ($product && $product->is_track_stock) {
-            $product->increment('stock', $item->getConvertedQuantity());
+            $product->decrement('stock', $item->getConvertedQuantity());
         }
     }
 
@@ -31,14 +31,14 @@ class WarehouseReturnItemObserver
                 'unit' => $item->getOriginal('unit'),
             ]);
 
-            // Revert old product stock based on original values
+            // Revert old product stock based on original values (which was decremented, so we increment)
             if ($oldProduct && $oldProduct->is_track_stock) {
-                $oldProduct->decrement('stock', $originalItem->getConvertedQuantity());
+                $oldProduct->increment('stock', $originalItem->getConvertedQuantity());
             }
 
             $newProduct = $item->product;
             if ($newProduct && $newProduct->is_track_stock) {
-                $newProduct->increment('stock', $item->getConvertedQuantity());
+                $newProduct->decrement('stock', $item->getConvertedQuantity());
             }
         } elseif ($item->isDirty('quantity') || $item->isDirty('unit')) {
             $product = $item->product;
@@ -50,7 +50,7 @@ class WarehouseReturnItemObserver
                     'unit' => $item->getOriginal('unit'),
                 ]);
                 $difference = $item->getConvertedQuantity() - $originalItem->getConvertedQuantity();
-                $product->increment('stock', $difference);
+                $product->decrement('stock', $difference);
             }
         }
     }
@@ -63,7 +63,7 @@ class WarehouseReturnItemObserver
         $product = \App\Models\Product::withTrashed()->find($item->product_id);
 
         if ($product && $product->is_track_stock) {
-            $product->decrement('stock', $item->getConvertedQuantity());
+            $product->increment('stock', $item->getConvertedQuantity());
         }
     }
 

@@ -366,7 +366,29 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($deliveryNote->items as $item)
+                @php
+                    $itemsToDisplay = $deliveryNote->items;
+                    if ($deliveryNote->type === 'MANUAL') {
+                        $groupedItems = [];
+                        foreach ($deliveryNote->items as $item) {
+                            $key = $item->product_id ? 'prod_' . $item->product_id : 'desc_' . ($item->description ?? '-');
+                            
+                            if (isset($groupedItems[$key])) {
+                                $groupedItems[$key]->quantity += $item->quantity;
+                                // Combine notes if available and not already identical
+                                if (!empty($item->note) && strpos($groupedItems[$key]->note ?? '', $item->note) === false) {
+                                    $existingNote = $groupedItems[$key]->note ?? '';
+                                    $groupedItems[$key]->note = empty($existingNote) ? $item->note : $existingNote . ', ' . $item->note;
+                                }
+                            } else {
+                                $groupedItems[$key] = clone $item;
+                            }
+                        }
+                        $itemsToDisplay = collect(array_values($groupedItems));
+                    }
+                @endphp
+
+                @foreach($itemsToDisplay as $item)
                 @php
                     $qty = $item->quantity;
                     $isi = $item->product?->isi ?? 0;
@@ -402,7 +424,7 @@
                 </tr>
                 @endforeach
                 {{-- Fill empty rows to maintain box height --}}
-                @for($i = $deliveryNote->items->count(); $i < 4; $i++)
+                @for($i = $itemsToDisplay->count(); $i < 4; $i++)
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
